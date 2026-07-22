@@ -1,0 +1,33 @@
+import { NextResponse } from "next/server";
+import { translateText } from "@/lib/ai/deepseek";
+import { withRateLimit } from "@/lib/middleware/api-guard";
+
+export const POST = withRateLimit(async (request: Request) => {
+  try {
+    const { text, targetLang } = await request.json();
+
+    if (!text || typeof text !== "string") {
+      return NextResponse.json(
+        { error: "请提供需要翻译的文本" },
+        { status: 400 }
+      );
+    }
+
+    if (text.length > 5000) {
+      return NextResponse.json(
+        { error: "文本长度不能超过5000字" },
+        { status: 400 }
+      );
+    }
+
+    const result = await translateText(text, targetLang || "en");
+
+    return NextResponse.json({ translatedText: result });
+  } catch (error) {
+    console.error("翻译API错误:", error);
+    return NextResponse.json(
+      { error: "翻译服务暂时不可用，请稍后重试" },
+      { status: 500 }
+    );
+  }
+}, { maxRequests: 10, windowMs: 60 * 1000 });
