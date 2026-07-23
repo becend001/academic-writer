@@ -87,7 +87,11 @@ export default function ProfilePage() {
 
   const loadWhitelist = async () => {
     try {
-      const res = await fetch("/api/admin/whitelist");
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+      const res = await fetch("/api/admin/whitelist", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
       const data = await res.json();
       setWhitelistList(data.list || []);
     } catch {}
@@ -98,9 +102,14 @@ export default function ProfilePage() {
     setWhitelistError("");
     setWhitelistLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
       const res = await fetch("/api/admin/whitelist", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({ email: whitelistEmail.trim() }),
       });
       const data = await res.json();
@@ -118,7 +127,12 @@ export default function ProfilePage() {
 
   const handleRemoveWhitelist = async (id: string) => {
     try {
-      await fetch(`/api/admin/whitelist?id=${id}`, { method: "DELETE" });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+      await fetch(`/api/admin/whitelist?id=${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
       loadWhitelist();
     } catch {}
   };

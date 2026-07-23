@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const ADMIN_EMAIL = "xiangbow@126.com";
 
@@ -12,31 +10,45 @@ function isAdmin(email: string | undefined): boolean {
   return email?.toLowerCase().trim() === ADMIN_EMAIL;
 }
 
-// GET: 获取白名单列表
-export async function GET(request: Request) {
-  const { data: { user } } = await supabaseAdmin.auth.getUser();
-  if (!user || !isAdmin(user.email)) {
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
+// 从Authorization header中获取token，创建带鉴权的Supabase客户端
+function getSupabaseFromRequest(request: Request): SupabaseClient {
+  const authHeader = request.headers.get("authorization") || "";
+  const token = authHeader.replace("Bearer ", "");
+
+  if (token) {
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
   }
 
-  const { data, error } = await supabaseAdmin
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
+
+async function requireAdmin(request: Request) {
+  const supabase = getSupabaseFromRequest(request);
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) return { supabase: null, user: null, error: "请先登录" };
+  if (!isAdmin(user.email)) return { supabase: null, user: null, error: "无权限" };
+  return { supabase, user, error: null };
+}
+
+export async function GET(request: Request) {
+  const { supabase, error } = await requireAdmin(request);
+  if (!supabase) return NextResponse.json({ error }, { status: 403 });
+
+  const { data, error: dbError } = await supabase
     .from("whitelist")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: "查询失败" }, { status: 500 });
-  }
-
+  if (dbError) return NextResponse.json({ error: "查询失败" }, { status: 500 });
   return NextResponse.json({ list: data || [] });
 }
 
-// POST: 添加邮箱到白名单
 export async function POST(request: Request) {
-  const { data: { user } } = await supabaseAdmin.auth.getUser();
-  if (!user || !isAdmin(user.email)) {
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-  }
+  const { supabase, user, error } = await requireAdmin(request);
+  if (!supabase) return NextResponse.json({ error }, { status: 403 });
 
   const { email } = await request.json();
   if (!email || typeof email !== "string") {
@@ -44,42 +56,28 @@ export async function POST(request: Request) {
   }
 
   const normalizedEmail = email.toLowerCase().trim();
-
-  const { error } = await supabaseAdmin
+  const { error: dbError } = await supabase
     .from("whitelist")
-    .insert({ email: normalizedEmail, created_by: user.email });
+    .insert({ email: normalizedEmail, created_by: user!.email });
 
-  if (error) {
-    if (error.code === "23505") {
-      return NextResponse.json({ error: "该邮箱已在白名单中" }, { status: 400 });
-    }
+  if (dbError) {
+    if (dbError.code === "23505") return NextResponse.json({ error: "该邮箱已在白名单中" }, { status: 400 });
     return NextResponse.json({ error: "添加失败" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
 }
 
-// DELETE: 从白名单移除
 export async function DELETE(request: Request) {
-  const { data: { user } } = await supabaseAdmin.auth.getUser();
-  if (!user || !isAdmin(user.email)) {
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-  }
+  const { supabase, error } = await requireAdmin(request);
+  if (!supabase) return NextResponse.json({ error }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "请提供记录ID" }, { status: 400 });
-  }
+  if (!id) return NextResponse.json({ error: "请提供记录ID" }, { status: 400 });
 
-  const { error } = await supabaseAdmin
-    .from("whitelist")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    return NextResponse.json({ error: "删除失败" }, { status: 500 });
-  }
+  const { error: dbError } = await supabase.from("whitelist").delete().eq("id", id);
+  if (dbError) return NextResponse.json({ error: "删除失败" }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }
