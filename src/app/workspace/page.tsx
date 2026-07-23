@@ -21,6 +21,7 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [todayUsage, setTodayUsage] = useState(0);
+  const [whitelisted, setWhitelisted] = useState(false);
   const usageLimit = 3;
   const { showToast } = useToast();
   // 文献搜索已移至独立页面 /literature
@@ -53,11 +54,13 @@ export default function WorkspacePage() {
     try {
       const res = await fetch("/api/usage");
       const data = await res.json();
+      if (data.whitelisted) { setWhitelisted(true); return; }
       if (data.today !== undefined) setTodayUsage(data.today);
     } catch {}
   };
 
   const checkUsage = () => {
+    if (whitelisted) return true;
     if (todayUsage >= usageLimit) {
       setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
       return false;
@@ -180,9 +183,9 @@ export default function WorkspacePage() {
         activePage="workspace" 
         rightContent={
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-base" style={{ background: todayUsage >= usageLimit ? '#FEE2E2' : '#DCFCE7', color: todayUsage >= usageLimit ? '#DC2626' : '#16A34A' }}>
-              <span>剩余</span>
-              <span className="font-bold">{usageLimit - todayUsage}/{usageLimit}</span>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-base" style={{ background: whitelisted ? '#EFF6FF' : todayUsage >= usageLimit ? '#FEE2E2' : '#DCFCE7', color: whitelisted ? '#1D4ED8' : todayUsage >= usageLimit ? '#DC2626' : '#16A34A' }}>
+              <span>{whitelisted ? '种子用户' : '剩余'}</span>
+              <span className="font-bold">{whitelisted ? '不限次数' : `${usageLimit - todayUsage}/${usageLimit}`}</span>
             </div>
             <Link href="/profile" className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white transition-transform hover:scale-110" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
               {user.email?.charAt(0).toUpperCase()}
@@ -366,11 +369,11 @@ export default function WorkspacePage() {
             <div className="px-6 py-4 flex flex-wrap gap-2" style={{ borderTop: '1px solid var(--border)' }}>
               {showComparison && (
                 <>
-                  <button onClick={() => { setOutputText(""); setShowComparison(false); executeAI("polish"); }} disabled={loading !== null || todayUsage >= usageLimit} className="btn btn-primary">
+                  <button onClick={() => { setOutputText(""); setShowComparison(false); executeAI("polish"); }} disabled={loading !== null || (!whitelisted && todayUsage >= usageLimit)} className="btn btn-primary">
                     <span>🔄</span>
                     <span>再次润色</span>
                   </button>
-                  <button onClick={() => { setInputText(originalText); setOutputText(""); setShowComparison(false); executeAI("polish"); }} disabled={loading !== null || todayUsage >= usageLimit} className="btn btn-secondary">
+                  <button onClick={() => { setInputText(originalText); setOutputText(""); setShowComparison(false); executeAI("polish"); }} disabled={loading !== null || (!whitelisted && todayUsage >= usageLimit)} className="btn btn-secondary">
                     <span>↩️</span>
                     <span>用原文重试</span>
                   </button>

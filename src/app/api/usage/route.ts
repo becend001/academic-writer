@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/client";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
@@ -15,11 +14,29 @@ export async function GET() {
       return NextResponse.json({ error: "未登录" }, { status: 401 });
     }
 
+    // 检查是否在白名单中
+    const { data: whitelistEntry } = await supabaseAdmin
+      .from("whitelist")
+      .select("id")
+      .eq("email", user.email?.toLowerCase().trim())
+      .maybeSingle();
+
+    const whitelisted = !!whitelistEntry;
+
+    // 白名单用户不限次数
+    if (whitelisted) {
+      return NextResponse.json({
+        today: 0,
+        total: 0,
+        whitelisted: true,
+      });
+    }
+
     // 今日起始时间
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    // 查询今日使用量（今日保存的文档数）
+    // 查询今日使用量
     const { count: todayCount } = await supabaseAdmin
       .from("saved_works")
       .select("*", { count: "exact", head: true })
@@ -35,8 +52,9 @@ export async function GET() {
     return NextResponse.json({
       today: todayCount || 0,
       total: totalCount || 0,
+      whitelisted: false,
     });
-  } catch (error: any) {
-    return NextResponse.json({ today: 0, total: 0 });
+  } catch {
+    return NextResponse.json({ today: 0, total: 0, whitelisted: false });
   }
 }

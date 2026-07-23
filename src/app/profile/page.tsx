@@ -15,6 +15,13 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [whitelistEmail, setWhitelistEmail] = useState("");
+  const [whitelistList, setWhitelistList] = useState<any[]>([]);
+  const [whitelistError, setWhitelistError] = useState("");
+  const [whitelistLoading, setWhitelistLoading] = useState(false);
+
+  const ADMIN_EMAIL = "xiangbow@126.com";
+  const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -22,6 +29,7 @@ export default function ProfilePage() {
         setUser(user);
         loadStats();
         loadDocuments();
+        loadWhitelist();
       } else {
         window.location.href = "/auth/login";
       }
@@ -75,6 +83,44 @@ export default function ProfilePage() {
       setPasswordError("修改失败，请稍后重试");
     }
     setPasswordLoading(false);
+  };
+
+  const loadWhitelist = async () => {
+    try {
+      const res = await fetch("/api/admin/whitelist");
+      const data = await res.json();
+      setWhitelistList(data.list || []);
+    } catch {}
+  };
+
+  const handleAddWhitelist = async () => {
+    if (!whitelistEmail.trim()) return;
+    setWhitelistError("");
+    setWhitelistLoading(true);
+    try {
+      const res = await fetch("/api/admin/whitelist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: whitelistEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWhitelistError(data.error);
+      } else {
+        setWhitelistEmail("");
+        loadWhitelist();
+      }
+    } catch {
+      setWhitelistError("添加失败");
+    }
+    setWhitelistLoading(false);
+  };
+
+  const handleRemoveWhitelist = async (id: string) => {
+    try {
+      await fetch(`/api/admin/whitelist?id=${id}`, { method: "DELETE" });
+      loadWhitelist();
+    } catch {}
   };
 
   if (!user) {
@@ -184,6 +230,63 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* 管理员：白名单管理 */}
+        {isAdmin && (
+          <div className="card-premium p-6 mt-6">
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--gray-900)' }}>🔑 用户白名单管理</h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--gray-500)' }}>白名单内的用户不受每日使用次数限制</p>
+
+            <div className="flex gap-3 mb-4">
+              <input
+                type="email"
+                value={whitelistEmail}
+                onChange={(e) => setWhitelistEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddWhitelist()}
+                className="input flex-1 py-2.5"
+                placeholder="输入邮箱地址添加到白名单"
+              />
+              <button
+                onClick={handleAddWhitelist}
+                disabled={whitelistLoading || !whitelistEmail.trim()}
+                className="btn btn-primary px-6 py-2.5"
+              >
+                {whitelistLoading ? "添加中..." : "添加"}
+              </button>
+            </div>
+
+            {whitelistError && (
+              <div className="mb-3 p-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                {whitelistError}
+              </div>
+            )}
+
+            {whitelistList.length === 0 ? (
+              <div className="text-center py-6" style={{ color: 'var(--gray-400)' }}>
+                暂无白名单用户
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {whitelistList.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--gray-50)' }}>
+                    <div className="flex items-center gap-3">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: '#DCFCE7', color: '#16A34A' }}>不限次数</span>
+                      <span className="text-sm" style={{ color: 'var(--gray-900)' }}>{item.email}</span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveWhitelist(item.id)}
+                      className="text-sm font-medium"
+                      style={{ color: 'var(--color-grant)' }}
+                    >
+                      移除
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* 密码修改弹窗 */}
