@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { translateText } from "@/lib/ai/deepseek";
 import { withRateLimit } from "@/lib/middleware/api-guard";
+import { withUsageLimit } from "@/lib/middleware/usage-guard";
 
-export const POST = withRateLimit(async (request: Request) => {
+export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
   try {
     const { text, targetLang } = await request.json();
 
@@ -30,4 +31,4 @@ export const POST = withRateLimit(async (request: Request) => {
       { status: 500 }
     );
   }
-}, { maxRequests: 10, windowMs: 60 * 1000 });
+}), { maxRequests: 10, windowMs: 60 * 1000 });

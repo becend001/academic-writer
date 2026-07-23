@@ -32,16 +32,42 @@ export default function GrantPage() {
   const [budgetItems, setBudgetItems] = useState<any[]>([]);
   const [budgetTotal, setBudgetTotal] = useState(50);
   const [innovations, setInnovations] = useState<any[]>([]);
+  const [todayUsage, setTodayUsage] = useState(0);
+  const [whitelisted, setWhitelisted] = useState(false);
+  const usageLimit = 3;
   const { showToast } = useToast();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUser(user);
-      else window.location.href = "/auth/login";
+      if (user) {
+        setUser(user);
+        loadUsage();
+      } else {
+        window.location.href = "/auth/login";
+      }
     });
   }, []);
 
+  const loadUsage = async () => {
+    try {
+      const res = await fetch("/api/usage");
+      const data = await res.json();
+      if (data.whitelisted) { setWhitelisted(true); return; }
+      if (data.today !== undefined) setTodayUsage(data.today);
+    } catch {}
+  };
+
+  const checkUsage = () => {
+    if (whitelisted) return true;
+    if (todayUsage >= usageLimit) {
+      showToast(`今日免费次数已用完（${usageLimit}次），请升级Pro版`, "error");
+      return false;
+    }
+    return true;
+  };
+
   const handleGenerateTopics = async () => {
+    if (!checkUsage()) return;
     if (!projectField && !projectKeywords) return;
     setTopicLoading(true);
     try {
@@ -52,6 +78,14 @@ export default function GrantPage() {
       });
       const data = await res.json();
       setTopicSuggestions(data.suggestions || []);
+      setTodayUsage((prev) => prev + 1);
+      try {
+        await fetch("/api/works", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: `选题建议 - ${projectField}`, content: projectField.substring(0, 200), result: JSON.stringify(data.suggestions).substring(0, 200), feature: "grant-topic" }),
+        });
+      } catch {}
     } catch { showToast("生成选题建议失败", "error"); }
     setTopicLoading(false);
   };
@@ -62,6 +96,7 @@ export default function GrantPage() {
   };
 
   const handleGenerateSection = async (sectionId: string) => {
+    if (!checkUsage()) return;
     if (!projectTitle) return;
     setSectionLoading(sectionId);
     try {
@@ -85,6 +120,14 @@ export default function GrantPage() {
           content = `总预算：${data.content.totalBudget}万元\n\n` + data.content.items.map((item: any) => `${item.category}：${item.amount}万元\n  说明：${item.description}\n  依据：${item.basis}`).join("\n\n");
         } else { content = JSON.stringify(data.content, null, 2); }
         setSections((prev) => ({ ...prev, [sectionId]: content }));
+        setTodayUsage((prev) => prev + 1);
+        try {
+          await fetch("/api/works", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: `课题申报 - ${sectionId}`, content: projectTitle.substring(0, 200), result: content.substring(0, 200), feature: `grant-${sectionId}` }),
+          });
+        } catch {}
       }
     } catch { showToast("生成失败", "error"); }
     setSectionLoading(null);
@@ -108,7 +151,13 @@ export default function GrantPage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Navbar activePage="grant" rightContent={
-        <div className="text-base" style={{ color: 'var(--gray-500)' }}>{user?.email}</div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm" style={{ background: whitelisted ? '#EFF6FF' : todayUsage >= usageLimit ? '#FEE2E2' : '#DCFCE7', color: whitelisted ? '#1D4ED8' : todayUsage >= usageLimit ? '#DC2626' : '#16A34A' }}>
+            <span>{whitelisted ? '种子用户' : '剩余'}</span>
+            <span className="font-bold">{whitelisted ? '不限次数' : `${usageLimit - todayUsage}/${usageLimit}`}</span>
+          </div>
+          <div className="text-base" style={{ color: 'var(--gray-500)' }}>{user?.email}</div>
+        </div>
       } />
 
       <div className="max-w-7xl mx-auto px-6 py-8">

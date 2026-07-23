@@ -20,6 +20,10 @@ interface Paper {
 interface LiteratureSearchProps {
   onSelect?: (paper: Paper) => void;
   selectedPapers?: Paper[];
+  todayUsage?: number;
+  usageLimit?: number;
+  whitelisted?: boolean;
+  onUsageConsumed?: () => void;
 }
 
 // 引用格式选项
@@ -35,6 +39,10 @@ const citationFormats = [
 export function LiteratureSearch({
   onSelect,
   selectedPapers = [],
+  todayUsage = 0,
+  usageLimit = 3,
+  whitelisted = false,
+  onUsageConsumed,
 }: LiteratureSearchProps) {
   const [activeTab, setActiveTab] = useState<"search" | "recommend">("search");
 
@@ -101,6 +109,10 @@ export function LiteratureSearch({
   // AI推荐
   const handleRecommend = async () => {
     if (!recommendContent.trim()) return;
+    if (!whitelisted && todayUsage >= usageLimit) {
+      setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
+      return;
+    }
 
     setRecommendLoading(true);
     setError("");
@@ -122,6 +134,14 @@ export function LiteratureSearch({
       } else {
         setRecommendResults(data.papers || []);
         setSearchQueries(data.searchQueries || []);
+        onUsageConsumed?.();
+        try {
+          await fetch("/api/works", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: `AI文献推荐`, content: recommendContent.substring(0, 200), result: JSON.stringify(data.papers || []).substring(0, 200), feature: "academic-recommend" }),
+          });
+        } catch {}
       }
     } catch {
       setError("推荐失败，请稍后重试");
@@ -133,6 +153,10 @@ export function LiteratureSearch({
   // 生成文献综述
   const handleGenerateReview = async () => {
     if (selectedPapers.length === 0) return;
+    if (!whitelisted && todayUsage >= usageLimit) {
+      setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
+      return;
+    }
 
     setReviewLoading(true);
     setError("");
@@ -161,6 +185,14 @@ export function LiteratureSearch({
       } else {
         setReviewContent(data.review || "");
         setShowReview(true);
+        onUsageConsumed?.();
+        try {
+          await fetch("/api/works", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: `文献综述`, content: selectedPapers.map(p => p.title).join(", ").substring(0, 200), result: (data.review || "").substring(0, 200), feature: "academic-review" }),
+          });
+        } catch {}
       }
     } catch {
       setError("生成文献综述失败");

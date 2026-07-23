@@ -96,6 +96,9 @@ export default function WorkflowPage() {
   const [grantType, setGrantType] = useState(PROJECT_TYPES[0]);
   const [reviewField, setReviewField] = useState("");
   const [activeResultTab, setActiveResultTab] = useState(0);
+  const [todayUsage, setTodayUsage] = useState(0);
+  const [whitelisted, setWhitelisted] = useState(false);
+  const usageLimit = 3;
 
   const getSteps = () => {
     switch (selectedWorkflow) {
@@ -110,12 +113,35 @@ export default function WorkflowPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUser(user);
-      else window.location.href = "/auth/login";
+      if (user) {
+        setUser(user);
+        loadUsage();
+      } else {
+        window.location.href = "/auth/login";
+      }
     });
   }, []);
 
+  const loadUsage = async () => {
+    try {
+      const res = await fetch("/api/usage");
+      const data = await res.json();
+      if (data.whitelisted) { setWhitelisted(true); return; }
+      if (data.today !== undefined) setTodayUsage(data.today);
+    } catch {}
+  };
+
+  const checkUsage = () => {
+    if (whitelisted) return true;
+    if (todayUsage >= usageLimit) {
+      setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
+      return false;
+    }
+    return true;
+  };
+
   const handleStartWorkflow = async () => {
+    if (!checkUsage()) return;
     if (selectedWorkflow !== "review-full" && !inputText.trim()) {
       setError("请输入内容");
       return;
@@ -180,6 +206,15 @@ export default function WorkflowPage() {
         setError(data.error);
       } else {
         setResult(data);
+        setTodayUsage((prev) => prev + 1);
+        // 记录使用量
+        try {
+          await fetch("/api/works", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: `全流程 - ${selectedWorkflow}`, content: inputText.substring(0, 200), result: JSON.stringify(data).substring(0, 200), feature: selectedWorkflow || "workflow" }),
+          });
+        } catch {}
         await stepProgress(2);
         await stepProgress(3);
       }
@@ -311,7 +346,13 @@ export default function WorkflowPage() {
     return (
       <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
         <Navbar activePage="workflow" rightContent={
-          <div className="text-base" style={{ color: 'var(--gray-500)' }}>{user?.email}</div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm" style={{ background: whitelisted ? '#EFF6FF' : todayUsage >= usageLimit ? '#FEE2E2' : '#DCFCE7', color: whitelisted ? '#1D4ED8' : todayUsage >= usageLimit ? '#DC2626' : '#16A34A' }}>
+              <span>{whitelisted ? '种子用户' : '剩余'}</span>
+              <span className="font-bold">{whitelisted ? '不限次数' : `${usageLimit - todayUsage}/${usageLimit}`}</span>
+            </div>
+            <div className="text-base" style={{ color: 'var(--gray-500)' }}>{user?.email}</div>
+          </div>
         } />
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="flex items-center gap-4 mb-10">

@@ -8,13 +8,33 @@ import { Navbar } from "@/components/ui/Navbar";
 
 export default function LiteraturePage() {
   const [user, setUser] = useState<any>(null);
+  const [todayUsage, setTodayUsage] = useState(0);
+  const [whitelisted, setWhitelisted] = useState(false);
+  const usageLimit = 3;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUser(user);
-      else window.location.href = "/auth/login";
+      if (user) {
+        setUser(user);
+        loadUsage();
+      } else {
+        window.location.href = "/auth/login";
+      }
     });
   }, []);
+
+  const loadUsage = async () => {
+    try {
+      const res = await fetch("/api/usage");
+      const data = await res.json();
+      if (data.whitelisted) { setWhitelisted(true); return; }
+      if (data.today !== undefined) setTodayUsage(data.today);
+    } catch {}
+  };
+
+  const handleUsageConsumed = () => {
+    setTodayUsage((prev) => prev + 1);
+  };
 
   if (!user) {
     return (
@@ -27,12 +47,23 @@ export default function LiteraturePage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Navbar activePage="literature" rightContent={
-        <div className="text-base" style={{ color: 'var(--gray-500)' }}>{user?.email}</div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm" style={{ background: whitelisted ? '#EFF6FF' : todayUsage >= usageLimit ? '#FEE2E2' : '#DCFCE7', color: whitelisted ? '#1D4ED8' : todayUsage >= usageLimit ? '#DC2626' : '#16A34A' }}>
+            <span>{whitelisted ? '种子用户' : '剩余'}</span>
+            <span className="font-bold">{whitelisted ? '不限次数' : `${usageLimit - todayUsage}/${usageLimit}`}</span>
+          </div>
+          <div className="text-base" style={{ color: 'var(--gray-500)' }}>{user?.email}</div>
+        </div>
       } />
 
       {/* 内容区 */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <LiteratureSearch />
+        <LiteratureSearch
+          todayUsage={todayUsage}
+          usageLimit={usageLimit}
+          whitelisted={whitelisted}
+          onUsageConsumed={handleUsageConsumed}
+        />
       </div>
     </div>
   );
