@@ -1,5 +1,7 @@
 // DeepSeek API 调用模块
 
+import { AI_TIMEOUT_MS } from "@/lib/config";
+
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 
 interface ChatMessage {
@@ -8,7 +10,7 @@ interface ChatMessage {
 }
 
 /**
- * 调用DeepSeek API
+ * 调用DeepSeek API（带超时）
  */
 export async function callDeepSeek(
   messages: ChatMessage[],
@@ -17,27 +19,35 @@ export async function callDeepSeek(
     maxTokens?: number;
   }
 ): Promise<string> {
-  const response = await fetch(DEEPSEEK_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages,
-      temperature: options?.temperature ?? 0.7,
-      max_tokens: options?.maxTokens ?? 2000,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "AI调用失败");
+  try {
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages,
+        temperature: options?.temperature ?? 0.7,
+        max_tokens: options?.maxTokens ?? 2000,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "AI调用失败");
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
 
 /**

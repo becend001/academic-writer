@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { extractKeywords } from "@/lib/ai/deepseek";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 import { withUsageLimit } from "@/lib/middleware/usage-guard";
+import { MAX_KEYWORDS_TEXT_LENGTH, MAX_KEYWORDS_COUNT } from "@/lib/config";
 
 export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
   try {
@@ -14,14 +15,15 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
       );
     }
 
-    if (text.length > 20000) {
+    if (text.length > MAX_KEYWORDS_TEXT_LENGTH) {
       return NextResponse.json(
-        { error: "文本长度不能超过20000字" },
+        { error: `文本长度不能超过${MAX_KEYWORDS_TEXT_LENGTH}字` },
         { status: 400 }
       );
     }
 
-    const keywords = await extractKeywords(text, count || 5);
+    const validCount = Math.min(Math.max(1, count || 5), MAX_KEYWORDS_COUNT);
+    const keywords = await extractKeywords(text, validCount);
 
     return NextResponse.json({ keywords });
   } catch (error) {

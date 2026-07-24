@@ -10,13 +10,14 @@ export function withUsageLimit(
   handler: (request: Request, context?: any) => Promise<NextResponse>
 ) {
   return async (request: Request, context?: any) => {
-    const { user, error } = await verifyAuth(request);
+    const { user, supabase, error } = await verifyAuth(request);
 
     if (!user) {
       return NextResponse.json({ error: error || "请先登录" }, { status: 401 });
     }
 
     const { allowed, todayUsage, error: usageError } = await checkDailyUsage(
+      supabase,
       user.email || "",
       user.id
     );

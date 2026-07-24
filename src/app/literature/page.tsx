@@ -5,12 +5,13 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { LiteratureSearch } from "@/components/ui/LiteratureSearch";
 import { Navbar } from "@/components/ui/Navbar";
+import { DAILY_USAGE_LIMIT } from "@/lib/config";
 
 export default function LiteraturePage() {
   const [user, setUser] = useState<any>(null);
   const [todayUsage, setTodayUsage] = useState(0);
   const [whitelisted, setWhitelisted] = useState(false);
-  const usageLimit = 3;
+  const usageLimit = DAILY_USAGE_LIMIT;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {

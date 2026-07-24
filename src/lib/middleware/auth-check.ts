@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 /**
  * 服务端auth检查 — 从 cookie 中验证用户身份
- * 使用 next/headers 读取最新 cookie（含 middleware 刷新后的 token）
+ * 返回 user + supabase client（可用于后续数据库操作）
  */
 export async function verifyAuth(request: Request) {
   const cookieStore = await cookies();
@@ -16,9 +16,7 @@ export async function verifyAuth(request: Request) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {
-          // API route 中不需要 set cookies
-        },
+        setAll() {},
       },
     }
   );
@@ -29,8 +27,8 @@ export async function verifyAuth(request: Request) {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return { user: null, error: "请先登录" };
+    return { user: null, supabase, error: "请先登录" };
   }
 
-  return { user, error: null };
+  return { user, supabase, error: null };
 }

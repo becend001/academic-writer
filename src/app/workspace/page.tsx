@@ -8,6 +8,7 @@ import { Navbar } from "@/components/ui/Navbar";
 import { Onboarding, shouldShowOnboarding } from "@/components/ui/Onboarding";
 import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { DAILY_USAGE_LIMIT } from "@/lib/config";
 
 export default function WorkspacePage() {
   const [user, setUser] = useState<any>(null);
@@ -23,7 +24,7 @@ export default function WorkspacePage() {
   const [error, setError] = useState("");
   const [todayUsage, setTodayUsage] = useState(0);
   const [whitelisted, setWhitelisted] = useState(false);
-  const usageLimit = 3;
+  const usageLimit = DAILY_USAGE_LIMIT;
   const { showToast } = useToast();
   // 文献搜索已移至独立页面 /literature
   const [showOnboarding, setShowOnboarding] = useState(false);

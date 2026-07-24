@@ -1,64 +1,98 @@
 import { NextResponse } from "next/server";
-import { getWork, updateWork, deleteWork } from "@/lib/supabase/works";
+import { createClientFromRequest } from "@/lib/supabase/api";
 
-async function requireAuth(request: Request) {
-  const cookies = request.headers.get("cookie") || "";
-  const hasSession = cookies.split(";").some((c) => {
-    const key = c.trim().split("=")[0];
-    return key.startsWith("sb-") && key.endsWith("-auth-token");
-  });
-  return hasSession;
-}
-
-// GET: 获取单个工作记录
+// GET: 获取单个工作记录（只允许查看自己的）
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await requireAuth(request))) {
+  const supabase = createClientFromRequest(request);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
   }
 
   try {
     const { id } = await params;
-    const work = await getWork(id);
-    return NextResponse.json({ work });
+    const { data, error } = await supabase
+      .from("saved_works")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (error || !data) {
+      return NextResponse.json({ error: "记录不存在" }, { status: 404 });
+    }
+
+    return NextResponse.json({ work: data });
   } catch {
     return NextResponse.json({ error: "获取失败" }, { status: 500 });
   }
 }
 
-// PUT: 更新工作记录
+// PUT: 更新工作记录（只允许更新自己的）
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await requireAuth(request))) {
+  const supabase = createClientFromRequest(request);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
   }
 
   try {
     const { id } = await params;
     const body = await request.json();
-    const work = await updateWork(id, body);
-    return NextResponse.json({ work });
+
+    const { data, error } = await supabase
+      .from("saved_works")
+      .update({
+        ...body,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return NextResponse.json({ error: "更新失败" }, { status: 500 });
+    }
+
+    return NextResponse.json({ work: data });
   } catch {
     return NextResponse.json({ error: "更新失败" }, { status: 500 });
   }
 }
 
-// DELETE: 删除工作记录
+// DELETE: 删除工作记录（只允许删除自己的）
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await requireAuth(request))) {
+  const supabase = createClientFromRequest(request);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
   }
 
   try {
     const { id } = await params;
-    await deleteWork(id);
+    const { error } = await supabase
+      .from("saved_works")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      return NextResponse.json({ error: "删除失败" }, { status: 500 });
+    }
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "删除失败" }, { status: 500 });

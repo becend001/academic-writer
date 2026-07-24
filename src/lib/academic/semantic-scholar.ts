@@ -1,5 +1,7 @@
 // Semantic Scholar API 调用模块
 
+import { SEARCH_TIMEOUT_MS } from "@/lib/config";
+
 const SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1";
 
 export interface Paper {
@@ -41,32 +43,40 @@ export async function searchPapers(
     params.append("year", yearRange);
   }
 
-  const response = await fetch(
-    `${SEMANTIC_SCHOLAR_API}/paper/search?${params}`
-  );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error("文献搜索失败");
+  try {
+    const response = await fetch(
+      `${SEMANTIC_SCHOLAR_API}/paper/search?${params}`,
+      { signal: controller.signal }
+    );
+
+    if (!response.ok) {
+      throw new Error("文献搜索失败");
+    }
+
+    const data = await response.json();
+
+    const papers: Paper[] = (data.data || []).map((paper: any) => ({
+      id: paper.paperId,
+      title: paper.title,
+      authors: (paper.authors || []).map((a: any) => a.name),
+      year: paper.year,
+      journal: paper.venue || "",
+      citationCount: paper.citationCount || 0,
+      abstract: paper.abstract || "",
+      doi: paper.externalIds?.DOI || "",
+      url: paper.url || `https://www.semanticscholar.org/paper/${paper.paperId}`,
+    }));
+
+    return {
+      papers,
+      total: data.total || 0,
+    };
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await response.json();
-
-  const papers: Paper[] = (data.data || []).map((paper: any) => ({
-    id: paper.paperId,
-    title: paper.title,
-    authors: (paper.authors || []).map((a: any) => a.name),
-    year: paper.year,
-    journal: paper.venue || "",
-    citationCount: paper.citationCount || 0,
-    abstract: paper.abstract || "",
-    doi: paper.externalIds?.DOI || "",
-    url: paper.url || `https://www.semanticscholar.org/paper/${paper.paperId}`,
-  }));
-
-  return {
-    papers,
-    total: data.total || 0,
-  };
 }
 
 /**

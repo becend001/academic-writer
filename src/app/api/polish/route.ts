@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { polishText } from "@/lib/ai/deepseek";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 import { withUsageLimit } from "@/lib/middleware/usage-guard";
+import { MAX_TEXT_LENGTH } from "@/lib/config";
 
 export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
   try {
@@ -14,9 +15,9 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
       );
     }
 
-    if (text.length > 5000) {
+    if (text.length > MAX_TEXT_LENGTH) {
       return NextResponse.json(
-        { error: "文本长度不能超过5000字" },
+        { error: `文本长度不能超过${MAX_TEXT_LENGTH}字` },
         { status: 400 }
       );
     }

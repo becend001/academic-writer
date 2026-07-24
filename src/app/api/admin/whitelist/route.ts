@@ -4,7 +4,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const ADMIN_EMAIL = "xiangbow@126.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "xiangbow@126.com";
 
 function isAdmin(email: string | undefined): boolean {
   return email?.toLowerCase().trim() === ADMIN_EMAIL;

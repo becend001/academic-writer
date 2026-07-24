@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { callDeepSeek } from "@/lib/ai/deepseek";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 import { withUsageLimit } from "@/lib/middleware/usage-guard";
+import { MAX_PAPERS_COUNT } from "@/lib/config";
 
 export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
   try {
@@ -10,6 +11,13 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
     if (!papers || !Array.isArray(papers) || papers.length === 0) {
       return NextResponse.json(
         { error: "请提供至少一篇文献" },
+        { status: 400 }
+      );
+    }
+
+    if (papers.length > MAX_PAPERS_COUNT) {
+      return NextResponse.json(
+        { error: `最多支持${MAX_PAPERS_COUNT}篇文献` },
         { status: 400 }
       );
     }

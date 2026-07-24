@@ -21,9 +21,7 @@ export default function ProfilePage() {
   const [whitelistList, setWhitelistList] = useState<any[]>([]);
   const [whitelistError, setWhitelistError] = useState("");
   const [whitelistLoading, setWhitelistLoading] = useState(false);
-
-  const ADMIN_EMAIL = "xiangbow@126.com";
-  const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL;
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -32,11 +30,20 @@ export default function ProfilePage() {
         loadStats();
         loadDocuments();
         loadWhitelist();
+        checkAdmin();
       } else {
         window.location.href = "/auth/login";
       }
     });
   }, []);
+
+  const checkAdmin = async () => {
+    try {
+      const res = await fetch("/api/admin/check");
+      const data = await res.json();
+      setIsAdmin(data.isAdmin || false);
+    } catch {}
+  };
 
   const loadStats = async () => {
     try {

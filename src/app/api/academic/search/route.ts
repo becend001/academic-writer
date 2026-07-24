@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { searchPapers } from "@/lib/academic/semantic-scholar";
+import { withRateLimit } from "@/lib/middleware/api-guard";
+import { MAX_SEARCH_LIMIT } from "@/lib/config";
 
-export async function GET(request: Request) {
+export const GET = withRateLimit(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
@@ -19,12 +21,8 @@ export async function GET(request: Request) {
     const yearMax = searchParams.get("yearMax")
       ? parseInt(searchParams.get("yearMax")!)
       : undefined;
-    const limit = searchParams.get("limit")
-      ? parseInt(searchParams.get("limit")!)
-      : 10;
-    const offset = searchParams.get("offset")
-      ? parseInt(searchParams.get("offset")!)
-      : 0;
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "10")), MAX_SEARCH_LIMIT);
+    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0"));
 
     const result = await searchPapers(query, {
       yearMin,
@@ -41,4 +39,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { maxRequests: 20, windowMs: 60 * 1000 });

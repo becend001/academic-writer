@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { DAILY_USAGE_LIMIT } from "@/lib/config";
 import { generateWordDocument, downloadDocx } from "@/lib/export/docx-generator";
 import ScoreReport from "@/components/ui/ScoreReport";
 
@@ -40,7 +41,7 @@ export default function GrantPage() {
   const [scoreLoading, setScoreLoading] = useState(false);
   const [scoreData, setScoreData] = useState<any>(null);
   const [showScoreReport, setShowScoreReport] = useState(false);
-  const usageLimit = 3;
+  const usageLimit = DAILY_USAGE_LIMIT;
   const { showToast } = useToast();
 
   useEffect(() => {

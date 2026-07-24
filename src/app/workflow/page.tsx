@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
+import { DAILY_USAGE_LIMIT } from "@/lib/config";
 
 const PROJECT_TYPES = [
   "国家自然科学基金面上项目",
@@ -98,7 +99,7 @@ export default function WorkflowPage() {
   const [activeResultTab, setActiveResultTab] = useState(0);
   const [todayUsage, setTodayUsage] = useState(0);
   const [whitelisted, setWhitelisted] = useState(false);
-  const usageLimit = 3;
+  const usageLimit = DAILY_USAGE_LIMIT;
 
   const getSteps = () => {
     switch (selectedWorkflow) {

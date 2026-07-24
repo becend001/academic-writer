@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { useToast } from "@/components/ui/Toast";
 
 interface ScoreData {
   totalScore: number;
@@ -51,6 +52,7 @@ function getStars(score: number): number {
 
 export default function ScoreReport({ score, onClose }: ScoreReportProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "details" | "suggestions">("overview");
+  const { showToast } = useToast();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
@@ -211,7 +213,7 @@ export default function ScoreReport({ score, onClose }: ScoreReportProps) {
             onClick={() => {
               const reportText = `申报书评分报告\n\n总分：${score.totalScore}/100 (${score.level})\n\n维度得分：\n- 选题创新性：${score.dimensions.innovation}/25\n- 研究方案可行性：${score.dimensions.feasibility}/25\n- 文献综述质量：${score.dimensions.literature}/20\n- 预期成果明确性：${score.dimensions.output}/15\n- 经费预算合理性：${score.dimensions.budget}/15\n\n优势：\n${score.strengths.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n不足：\n${score.weaknesses.map((w, i) => `${i + 1}. ${w}`).join("\n")}\n\n改进建议：\n${score.suggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
               copyToClipboard(reportText);
-              alert("报告已复制到剪贴板");
+              showToast("报告已复制到剪贴板", "success");
             }}
             className="px-6 py-2 rounded-lg font-semibold text-white"
             style={{ background: "var(--brand-600)" }}

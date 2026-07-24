@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateCitation, Paper } from "@/lib/academic/semantic-scholar";
+import { withRateLimit } from "@/lib/middleware/api-guard";
 
-export async function POST(request: Request) {
+export const POST = withRateLimit(async (request: Request) => {
   try {
     const { papers, format = "gb7714" } = await request.json();
 
@@ -12,18 +13,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const citations = papers.map((paper: Paper, index: number) =>
-      generateCitation(paper, format, index + 1)
-    );
+    if (papers.length > 20) {
+      return NextResponse.json(
+        { error: "最多支持20篇文献" },
+        { status: 400 }
+      );
+    }
 
-    const fullCitation = citations.join("\n\n");
+    const citations = papers.map((paper: Paper) => generateCitation(paper, format as any));
 
-    return NextResponse.json({
-      citations,
-      fullCitation,
-      format,
-      count: citations.length,
-    });
+    return NextResponse.json({ citations });
   } catch (error: any) {
     console.error("引用生成API错误:", error);
     return NextResponse.json(
@@ -31,4 +30,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { maxRequests: 20, windowMs: 60 * 1000 });
