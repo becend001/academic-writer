@@ -8,8 +8,6 @@ export function createClient() {
 }
 
 // 保持向后兼容的默认导出
-import { createClient as createSupabaseClient } from "@supabase/ssr";
-
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
