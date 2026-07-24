@@ -29,8 +29,8 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 刷新 session — 确保 cookie 中有最新的 token
-  await supabase.auth.getUser();
+  // 静默刷新 session
+  await supabase.auth.getUser().catch(() => {});
 
   return supabaseResponse;
 }
