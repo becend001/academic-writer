@@ -1,9 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
-// 导航栏
+// 导航栏 - 根据登录状态显示不同内容
 function Navbar() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+    });
+  }, []);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(250, 250, 249, 0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border-subtle)' }}>
       <div className="max-w-7xl mx-auto px-6">
@@ -21,8 +33,24 @@ function Navbar() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="px-5 py-2.5 rounded-lg font-semibold transition-colors" style={{ color: 'var(--gray-700)', fontSize: '16px' }}>登录</Link>
-            <Link href="/auth/register" className="btn btn-primary btn-lg">免费试用</Link>
+            {loading ? (
+              <div className="w-10 h-10 rounded-full" style={{ background: 'var(--gray-100)' }}></div>
+            ) : user ? (
+              <>
+                <Link href="/workspace" className="btn btn-primary">
+                  <span>🚀</span>
+                  <span>进入工作台</span>
+                </Link>
+                <Link href="/profile" className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white transition-transform hover:scale-110" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
+                  {user.email?.charAt(0).toUpperCase()}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="px-5 py-2.5 rounded-lg font-semibold transition-colors" style={{ color: 'var(--gray-700)', fontSize: '16px' }}>登录</Link>
+                <Link href="/auth/register" className="btn btn-primary btn-lg">免费试用</Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -32,6 +60,14 @@ function Navbar() {
 
 // Hero区域 - 简洁有力
 function Hero() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
   return (
     <section className="pt-28 pb-20 px-6 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 50%, var(--bg-base) 100%)' }}>
       {/* 装饰元素 - 简化 */}
@@ -80,9 +116,15 @@ function Hero() {
 
             {/* 按钮 */}
             <div className="flex flex-wrap gap-3">
-              <Link href="/auth/register" className="px-8 py-3 rounded-xl text-base font-bold text-white transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)' }}>
-                免费开始 →
-              </Link>
+              {user ? (
+                <Link href="/workspace" className="px-8 py-3 rounded-xl text-base font-bold text-white transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)' }}>
+                  进入工作台 →
+                </Link>
+              ) : (
+                <Link href="/auth/register" className="px-8 py-3 rounded-xl text-base font-bold text-white transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)' }}>
+                  免费开始 →
+                </Link>
+              )}
               <a href="#features" className="px-8 py-3 rounded-xl text-base font-semibold transition-all hover:bg-white" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--gray-700)', border: '1px solid var(--border)' }}>
                 了解更多
               </a>
