@@ -178,7 +178,8 @@ async function runTests() {
     await page.waitForTimeout(500);
     
     await page.locator('button:has-text("开始润色")').first().click();
-    await page.waitForTimeout(20000);
+    // 全流程需要润色+翻译+摘要三步AI处理，等待时间要更长
+    await page.waitForTimeout(30000);
     
     const hasTabs = await page.locator('text=润色结果').isVisible().catch(() => false);
     if (!hasTabs) throw new Error('全流程结果未显示');
@@ -198,7 +199,8 @@ async function runTests() {
     await keywordsInput.fill('深度学习');
     
     await page.locator('button:has-text("生成写作方案")').first().click();
-    await page.waitForTimeout(15000);
+    // 写作引导需要生成选题+大纲+要点，AI处理较慢
+    await page.waitForTimeout(30000);
     
     const hasResult = await page.locator('.whitespace-pre-wrap').first().isVisible().catch(() => false);
     if (!hasResult) throw new Error('写作方案未生成');
@@ -263,10 +265,11 @@ async function runTests() {
     await page.locator('button:has-text("AI生成")').first().click();
     await page.waitForTimeout(15000);
     
+    // 评分是复杂AI分析，需要更长时间
     await page.locator('button:has-text("申报书评分")').first().click();
-    await page.waitForTimeout(15000);
+    await page.waitForTimeout(30000);
     
-    const hasScore = await waitForText('评分', 15000);
+    const hasScore = await waitForText('评分', 30000);
     if (!hasScore) throw new Error('评分报告未显示');
   });
   
@@ -340,9 +343,10 @@ async function runTests() {
     await titleInput.fill('基于深度学习的医学影像分类研究');
     
     await page.locator('button:has-text("获取期刊推荐")').first().click();
-    await page.waitForTimeout(15000);
+    // 期刊推荐需要AI分析+数据库查询，等待时间更长
+    await page.waitForTimeout(30000);
     
-    const hasResults = await waitForText('推荐', 15000);
+    const hasResults = await waitForText('推荐', 30000);
     if (!hasResults) throw new Error('期刊推荐结果未显示');
   });
   
