@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 interface Journal {
   name: string;
@@ -121,7 +122,7 @@ export default function JournalRecommendation({
 
   const handleCopyJournal = (journal: Journal) => {
     const text = `${journal.name} | IF: ${journal.impactFactor} | ${journal.quartile} | ${journal.chinesePartition}`;
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     showToast("已复制期刊信息", "success");
   };
 

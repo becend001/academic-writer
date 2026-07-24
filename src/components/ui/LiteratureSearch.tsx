@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 import JournalRecommendation from "@/components/ui/JournalRecommendation";
 import SubmissionAssist from "@/components/ui/SubmissionAssist";
 
@@ -205,7 +206,7 @@ export function LiteratureSearch({
 
   // 复制综述
   const handleCopyReview = () => {
-    navigator.clipboard.writeText(reviewContent);
+    copyToClipboard(reviewContent);
     showToast("文献综述已复制到剪贴板");
   };
 
@@ -242,7 +243,7 @@ export function LiteratureSearch({
 
   // 复制引用
   const handleCopyCitations = () => {
-    navigator.clipboard.writeText(citations.join("\n\n"));
+    copyToClipboard(citations.join("\n\n"));
     showToast("引用已复制到剪贴板");
   };
 

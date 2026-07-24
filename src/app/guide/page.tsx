@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { useToast } from "@/components/ui/Toast";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 export default function GuidePage() {
   const [user, setUser] = useState<any>(null);
@@ -137,7 +138,7 @@ export default function GuidePage() {
       });
     }
 
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     showToast("已复制到剪贴板");
   };
 

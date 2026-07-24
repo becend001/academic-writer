@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { useToast } from "@/components/ui/Toast";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 import { generateWordDocument, downloadDocx } from "@/lib/export/docx-generator";
 import ScoreReport from "@/components/ui/ScoreReport";
 
@@ -503,7 +504,7 @@ export default function GrantPage() {
 
                 <div className="mt-5 flex items-center justify-between" style={{ color: 'var(--gray-500)', fontSize: '16px' }}>
                   <span>{sections[activeSection]?.length || 0} 字</span>
-                  <button onClick={() => { navigator.clipboard.writeText(sections[activeSection] || ""); showToast("已复制"); }} className="font-semibold" style={{ color: 'var(--brand-600)' }}>复制内容</button>
+                  <button onClick={() => { copyToClipboard(sections[activeSection] || ""); showToast("已复制"); }} className="font-semibold" style={{ color: 'var(--brand-600)' }}>复制内容</button>
                 </div>
               </div>
             </div>

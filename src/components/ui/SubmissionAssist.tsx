@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 interface SubmissionAssistProps {
   todayUsage?: number;
@@ -183,7 +184,7 @@ export default function SubmissionAssist({
   };
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     showToast("已复制到剪贴板", "success");
   };
 

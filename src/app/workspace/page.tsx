@@ -7,6 +7,7 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { Navbar } from "@/components/ui/Navbar";
 import { Onboarding, shouldShowOnboarding } from "@/components/ui/Onboarding";
 import { useToast } from "@/components/ui/Toast";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 export default function WorkspacePage() {
   const [user, setUser] = useState<any>(null);
@@ -161,7 +162,7 @@ export default function WorkspacePage() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(outputText);
+    copyToClipboard(outputText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
