@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/client";
+import { createClientFromRequest } from "@/lib/supabase/api";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 
 // 获取单个论文详情
@@ -8,6 +8,7 @@ export const GET = withRateLimit(async (
   { params }: { params: { id: string } }
 ) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -50,6 +51,7 @@ export const PUT = withRateLimit(async (
   { params }: { params: { id: string } }
 ) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -133,6 +135,7 @@ export const DELETE = withRateLimit(async (
   { params }: { params: { id: string } }
 ) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {

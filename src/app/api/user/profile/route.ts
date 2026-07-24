@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/client";
+import { createClientFromRequest } from "@/lib/supabase/api";
 import { callDeepSeek } from "@/lib/ai/deepseek";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 
 // 获取用户学术档案
 export const GET = withRateLimit(async (request: Request) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -99,6 +100,7 @@ export const GET = withRateLimit(async (request: Request) => {
 // 更新用户学术档案
 export const PUT = withRateLimit(async (request: Request) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {

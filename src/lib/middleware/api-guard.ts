@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "./rate-limit";
-import { supabase } from "@/lib/supabase/client";
 
 /**
  * 从请求中获取用户标识（优先用user ID，fallback到IP）

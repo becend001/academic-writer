@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/client";
+import { createClientFromRequest } from "@/lib/supabase/api";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 
 // 导出用户所有数据
 export const GET = withRateLimit(async (request: Request) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {

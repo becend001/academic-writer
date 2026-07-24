@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/client";
+import { createClientFromRequest } from "@/lib/supabase/api";
 import { withRateLimit } from "@/lib/middleware/api-guard";
 
 // 获取论文时间线列表
 export const GET = withRateLimit(async (request: Request) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -44,6 +45,7 @@ export const GET = withRateLimit(async (request: Request) => {
 // 创建新论文
 export const POST = withRateLimit(async (request: Request) => {
   try {
+    const supabase = createClientFromRequest(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
