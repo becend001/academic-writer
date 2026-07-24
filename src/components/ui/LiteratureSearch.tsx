@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import JournalRecommendation from "@/components/ui/JournalRecommendation";
+import SubmissionAssist from "@/components/ui/SubmissionAssist";
 
 interface Paper {
   id: string;
@@ -44,7 +46,7 @@ export function LiteratureSearch({
   whitelisted = false,
   onUsageConsumed,
 }: LiteratureSearchProps) {
-  const [activeTab, setActiveTab] = useState<"search" | "recommend">("search");
+  const [activeTab, setActiveTab] = useState<"search" | "recommend" | "journal" | "submission">("search");
 
   // 搜索相关状态
   const [query, setQuery] = useState("");
@@ -367,6 +369,26 @@ export function LiteratureSearch({
         >
           🤖 AI智能推荐
         </button>
+        <button
+          onClick={() => setActiveTab("journal")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "journal"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          📚 期刊推荐
+        </button>
+        <button
+          onClick={() => setActiveTab("submission")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "submission"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          📝 投稿辅助
+        </button>
       </div>
 
       {/* 错误提示 */}
@@ -513,6 +535,26 @@ export function LiteratureSearch({
             </div>
           )}
         </div>
+      )}
+
+      {/* 期刊推荐 */}
+      {activeTab === "journal" && (
+        <JournalRecommendation
+          todayUsage={todayUsage}
+          usageLimit={usageLimit}
+          whitelisted={whitelisted}
+          onUsageConsumed={onUsageConsumed}
+        />
+      )}
+
+      {/* 投稿辅助 */}
+      {activeTab === "submission" && (
+        <SubmissionAssist
+          todayUsage={todayUsage}
+          usageLimit={usageLimit}
+          whitelisted={whitelisted}
+          onUsageConsumed={onUsageConsumed}
+        />
       )}
 
       {/* 引用格式面板 */}

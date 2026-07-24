@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
+import AcademicProfile from "@/components/ui/AcademicProfile";
+import PaperTimeline from "@/components/ui/PaperTimeline";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -222,6 +224,16 @@ export default function ProfilePage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* 学术档案 */}
+        <div className="mb-6">
+          <AcademicProfile userId={user.id} />
+        </div>
+
+        {/* 论文时间线 */}
+        <div className="mb-6">
+          <PaperTimeline />
         </div>
 
         {/* 账号设置 */}

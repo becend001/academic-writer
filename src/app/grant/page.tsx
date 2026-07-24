@@ -5,6 +5,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { useToast } from "@/components/ui/Toast";
+import { generateWordDocument, downloadDocx } from "@/lib/export/docx-generator";
+import ScoreReport from "@/components/ui/ScoreReport";
 
 const proposalSections = [
   { id: "abstract", title: "摘要", icon: "📝" },
@@ -34,6 +36,9 @@ export default function GrantPage() {
   const [innovations, setInnovations] = useState<any[]>([]);
   const [todayUsage, setTodayUsage] = useState(0);
   const [whitelisted, setWhitelisted] = useState(false);
+  const [scoreLoading, setScoreLoading] = useState(false);
+  const [scoreData, setScoreData] = useState<any>(null);
+  const [showScoreReport, setShowScoreReport] = useState(false);
   const usageLimit = 3;
   const { showToast } = useToast();
 
@@ -133,17 +138,92 @@ export default function GrantPage() {
     setSectionLoading(null);
   };
 
-  const handleExport = (format: "txt" | "md") => {
-    const allContent = proposalSections.map((s) => `## ${s.title}\n\n${sections[s.id] || ""}`).join("\n\n---\n\n");
-    const header = `# ${projectTitle || "课题申报书"}\n\n**研究领域**：${projectField || "未指定"}\n**关键词**：${projectKeywords || "未指定"}\n**项目类型**：${projectType}\n\n---\n\n`;
-    const fullContent = header + allContent;
-    const blob = new Blob([format === "md" ? fullContent : fullContent.replace(/[#*`\-\n]{3,}/g, "\n")], { type: format === "md" ? "text/markdown" : "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${projectTitle || "申报书"}.${format === "md" ? "md" : "txt"}`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExport = async (format: "txt" | "md" | "docx") => {
+    if (format === "docx") {
+      // Word 导出
+      try {
+        showToast("正在生成 Word 文档...", "info");
+        const blob = await generateWordDocument({
+          title: projectTitle,
+          field: projectField,
+          keywords: projectKeywords,
+          projectType,
+          sections,
+        });
+        downloadDocx(blob, `${projectTitle || "申报书"}.docx`);
+        showToast("Word 文档已生成并下载", "success");
+      } catch (error) {
+        console.error("Word export error:", error);
+        showToast("Word 导出失败，请重试", "error");
+      }
+    } else {
+      // TXT/MD 导出
+      const allContent = proposalSections.map((s) => `## ${s.title}\n\n${sections[s.id] || ""}`).join("\n\n---\n\n");
+      const header = `# ${projectTitle || "课题申报书"}\n\n**研究领域**：${projectField || "未指定"}\n**关键词**：${projectKeywords || "未指定"}\n**项目类型**：${projectType}\n\n---\n\n`;
+      const fullContent = header + allContent;
+      const blob = new Blob([format === "md" ? fullContent : fullContent.replace(/[#*`\-\n]{3,}/g, "\n")], { type: format === "md" ? "text/markdown" : "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${projectTitle || "申报书"}.${format === "md" ? "md" : "txt"}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleScore = async () => {
+    if (!checkUsage()) return;
+    if (!projectTitle) {
+      showToast("请先填写项目名称", "error");
+      return;
+    }
+
+    const hasContent = Object.values(sections).some((v) => v && v.trim());
+    if (!hasContent) {
+      showToast("请先生成至少一个章节的内容", "error");
+      return;
+    }
+
+    setScoreLoading(true);
+    try {
+      const res = await fetch("/api/grant/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: projectTitle,
+          field: projectField,
+          projectType,
+          sections,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        showToast(data.error, "error");
+      } else if (data.score) {
+        setScoreData(data.score);
+        setShowScoreReport(true);
+        setTodayUsage((prev) => prev + 1);
+
+        // 保存评分记录
+        try {
+          await fetch("/api/works", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: `申报书评分 - ${projectTitle}`,
+              content: projectTitle.substring(0, 200),
+              result: JSON.stringify(data.score).substring(0, 200),
+              feature: "grant-score",
+            }),
+          });
+        } catch {}
+      }
+    } catch (error) {
+      console.error("评分失败:", error);
+      showToast("评分失败，请重试", "error");
+    }
+    setScoreLoading(false);
   };
 
   if (!user) return <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}><div className="flex items-center gap-3" style={{ color: 'var(--gray-600)' }}><div className="spinner" style={{ borderColor: 'var(--gray-300)', borderTopColor: 'var(--brand-500)' }}></div><span>加载中...</span></div></div>;
@@ -176,11 +256,22 @@ export default function GrantPage() {
             </Link>
             {currentStep === "edit" && (
               <>
-                <button onClick={() => handleExport("md")} className="btn btn-secondary">
+                <button onClick={handleScore} disabled={scoreLoading} className="btn btn-primary">
+                  {scoreLoading ? (
+                    <><div className="spinner"></div><span>评分中...</span></>
+                  ) : (
+                    <><span>📊</span><span>申报书评分</span></>
+                  )}
+                </button>
+                <button onClick={() => handleExport("docx")} className="btn btn-secondary">
                   <span>📄</span>
+                  <span>导出 Word</span>
+                </button>
+                <button onClick={() => handleExport("md")} className="btn btn-secondary">
+                  <span>📝</span>
                   <span>导出 Markdown</span>
                 </button>
-                <button onClick={() => handleExport("txt")} className="btn btn-primary">
+                <button onClick={() => handleExport("txt")} className="btn btn-secondary">
                   <span>📋</span>
                   <span>导出文本</span>
                 </button>
@@ -354,8 +445,9 @@ export default function GrantPage() {
                   ))}
                 </nav>
                 <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                  <button onClick={() => handleExport("md")} className="w-full btn btn-secondary text-sm mb-2">📄 导出 Markdown</button>
-                  <button onClick={() => handleExport("txt")} className="w-full btn btn-primary text-sm">📋 导出文本</button>
+                  <button onClick={() => handleExport("docx")} className="w-full btn btn-primary text-sm mb-2">📄 导出 Word</button>
+                  <button onClick={() => handleExport("md")} className="w-full btn btn-secondary text-sm mb-2">📝 导出 Markdown</button>
+                  <button onClick={() => handleExport("txt")} className="w-full btn btn-secondary text-sm">📋 导出文本</button>
                 </div>
               </div>
             </div>
@@ -418,6 +510,17 @@ export default function GrantPage() {
           </div>
         )}
       </div>
+
+      {/* 评分报告弹窗 */}
+      {showScoreReport && scoreData && (
+        <ScoreReport
+          score={scoreData}
+          onClose={() => {
+            setShowScoreReport(false);
+            setScoreData(null);
+          }}
+        />
+      )}
     </div>
   );
 }
