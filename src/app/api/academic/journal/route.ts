@@ -158,7 +158,7 @@ ${targetQuartile ? `目标分区：${targetQuartile}` : ""}
       { role: "system", content: systemPrompt.replace("{{JOURNALS}}", journalsText || "暂无数据") },
       { role: "user", content: userPrompt },
     ],
-    { temperature: 0.3, maxTokens: 2000 }
+    { temperature: 0.3, maxTokens: 4000 }
   );
 
   // 解析 JSON 结果

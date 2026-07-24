@@ -126,7 +126,7 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
         { role: "system", content: systemPrompt },
         { role: "user", content: "请对以上课题申报书进行评分" },
       ],
-      { temperature: 0.3, maxTokens: 1500 }
+      { temperature: 0.3, maxTokens: 3000 }
     );
 
     // 解析 JSON 结果

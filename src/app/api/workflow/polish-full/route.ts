@@ -34,7 +34,7 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
         },
         { role: "user", content: text },
       ],
-      { temperature: 0.3, maxTokens: 3000 }
+      { temperature: 0.3, maxTokens: 4000 }
     );
 
     let polishedText = text;
@@ -66,7 +66,7 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
         },
         { role: "user", content: polishedText },
       ],
-      { temperature: 0.3, maxTokens: 3000 }
+      { temperature: 0.3, maxTokens: 4000 }
     );
 
     // 步骤3：摘要
@@ -93,7 +93,7 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
         },
         { role: "user", content: text },
       ],
-      { temperature: 0.3, maxTokens: 1000 }
+      { temperature: 0.3, maxTokens: 2000 }
     );
 
     let abstract = "";

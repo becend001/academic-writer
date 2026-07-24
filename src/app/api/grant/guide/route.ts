@@ -89,7 +89,7 @@ export const POST = withRateLimit(withUsageLimit(async (request: Request) => {
         { role: "system", content: systemPrompt },
         { role: "user", content: "请生成写作方案" },
       ],
-      { temperature: 0.7, maxTokens: 3000 }
+      { temperature: 0.7, maxTokens: 6000 }
     );
 
     try {
