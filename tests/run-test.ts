@@ -68,17 +68,14 @@ async function runTests() {
   // 安全导航：失败时恢复到首页，避免级联崩溃
   async function safeGoto(url: string): Promise<boolean> {
     try {
-      const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
-      if (response && !response.ok()) {
-        console.log(`⚠️ 页面返回 ${response.status()}，尝试恢复...\n`);
-        await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 10000 }).catch(() => {});
-        return false;
-      }
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      // 等待页面渲染
+      await page.waitForTimeout(2000);
       return true;
     } catch {
-      // 导航失败，尝试恢复到首页
       try {
-        await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 10000 });
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        await page.waitForTimeout(1000);
       } catch {}
       return false;
     }
