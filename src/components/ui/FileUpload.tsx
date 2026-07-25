@@ -93,7 +93,7 @@ export function FileUpload({ onFileContent, disabled }: FileUploadProps) {
     if (disabled) return;
 
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
+    if (files.length > 0 && files[0]) {
       handleFile(files[0]);
     }
   };
@@ -106,7 +106,7 @@ export function FileUpload({ onFileContent, disabled }: FileUploadProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && files[0]) {
       handleFile(files[0]);
     }
     // 重置input，允许重复上传同一文件

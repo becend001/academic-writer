@@ -43,6 +43,7 @@ export async function checkDailyUsage(
 
     return { allowed: true, whitelisted: false, todayUsage, error: null };
   } catch {
-    return { allowed: true, whitelisted: false, todayUsage: 0, error: null };
+    // 数据库查询失败时拒绝访问（fail-closed），防止数据库异常时无限使用
+    return { allowed: false, whitelisted: false, todayUsage: 0, error: "服务暂时不可用，请稍后重试" };
   }
 }

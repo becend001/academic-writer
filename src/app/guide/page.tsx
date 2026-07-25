@@ -7,6 +7,7 @@ import { Navbar } from "@/components/ui/Navbar";
 import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { DAILY_USAGE_LIMIT } from "@/lib/config";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 export default function GuidePage() {
   const [user, setUser] = useState<any>(null);
@@ -35,7 +36,7 @@ export default function GuidePage() {
 
   const loadUsage = async () => {
     try {
-      const res = await fetch("/api/usage");
+      const res = await csrfFetch("/api/usage");
       const data = await res.json();
       if (data.whitelisted) { setWhitelisted(true); return; }
       if (data.today !== undefined) setTodayUsage(data.today);
@@ -63,7 +64,7 @@ export default function GuidePage() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/grant/guide", {
+      const res = await csrfFetch("/api/grant/guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -82,7 +83,7 @@ export default function GuidePage() {
         setResult(data);
         setTodayUsage((prev) => prev + 1);
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: `智能写作引导 - ${field}`, content: field.substring(0, 200), result: JSON.stringify(data).substring(0, 200), feature: "guide" }),

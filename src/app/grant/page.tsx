@@ -9,6 +9,7 @@ import { copyToClipboard } from "@/lib/utils/clipboard";
 import { DAILY_USAGE_LIMIT } from "@/lib/config";
 import { generateWordDocument, downloadDocx } from "@/lib/export/docx-generator";
 import ScoreReport from "@/components/ui/ScoreReport";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 const proposalSections = [
   { id: "abstract", title: "摘要", icon: "📝" },
@@ -57,7 +58,7 @@ export default function GrantPage() {
 
   const loadUsage = async () => {
     try {
-      const res = await fetch("/api/usage");
+      const res = await csrfFetch("/api/usage");
       const data = await res.json();
       if (data.whitelisted) { setWhitelisted(true); return; }
       if (data.today !== undefined) setTodayUsage(data.today);
@@ -78,7 +79,7 @@ export default function GrantPage() {
     if (!projectField && !projectKeywords) return;
     setTopicLoading(true);
     try {
-      const res = await fetch("/api/grant/topic", {
+      const res = await csrfFetch("/api/grant/topic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ field: projectField, keywords: projectKeywords, projectType }),
@@ -87,7 +88,7 @@ export default function GrantPage() {
       setTopicSuggestions(data.suggestions || []);
       setTodayUsage((prev) => prev + 1);
       try {
-        await fetch("/api/works", {
+        await csrfFetch("/api/works", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title: `选题建议 - ${projectField}`, content: projectField.substring(0, 200), result: JSON.stringify(data.suggestions).substring(0, 200), feature: "grant-topic" }),
@@ -107,7 +108,7 @@ export default function GrantPage() {
     if (!projectTitle) return;
     setSectionLoading(sectionId);
     try {
-      const res = await fetch("/api/grant/section", {
+      const res = await csrfFetch("/api/grant/section", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: projectTitle, field: projectField, section: sectionId, projectType }),
@@ -129,7 +130,7 @@ export default function GrantPage() {
         setSections((prev) => ({ ...prev, [sectionId]: content }));
         setTodayUsage((prev) => prev + 1);
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: `课题申报 - ${sectionId}`, content: projectTitle.substring(0, 200), result: content.substring(0, 200), feature: `grant-${sectionId}` }),
@@ -188,7 +189,7 @@ export default function GrantPage() {
 
     setScoreLoading(true);
     try {
-      const res = await fetch("/api/grant/score", {
+      const res = await csrfFetch("/api/grant/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -209,7 +210,7 @@ export default function GrantPage() {
 
         // 保存评分记录
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

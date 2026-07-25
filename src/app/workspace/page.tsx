@@ -9,6 +9,7 @@ import { Onboarding, shouldShowOnboarding } from "@/components/ui/Onboarding";
 import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { DAILY_USAGE_LIMIT } from "@/lib/config";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 export default function WorkspacePage() {
   const [user, setUser] = useState<any>(null);
@@ -46,7 +47,7 @@ export default function WorkspacePage() {
 
   const loadDocuments = async () => {
     try {
-      const res = await fetch("/api/works?limit=10");
+      const res = await csrfFetch("/api/works?limit=10");
       const data = await res.json();
       if (data.works) setDocuments(data.works);
     } catch {}
@@ -54,7 +55,7 @@ export default function WorkspacePage() {
 
   const loadUsage = async () => {
     try {
-      const res = await fetch("/api/usage");
+      const res = await csrfFetch("/api/usage");
       const data = await res.json();
       if (data.whitelisted) { setWhitelisted(true); return; }
       if (data.today !== undefined) setTodayUsage(data.today);
@@ -88,7 +89,7 @@ export default function WorkspacePage() {
         case "grammar": endpoint = "/api/grammar"; break;
         default: return;
       }
-      const res = await fetch(endpoint, {
+      const res = await csrfFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -123,7 +124,7 @@ export default function WorkspacePage() {
         setOutputText(output);
         // 向服务端记录使用量
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: `使用记录 - ${action}`, content: inputText.substring(0, 200), result: output.substring(0, 200), feature: action }),
@@ -138,7 +139,7 @@ export default function WorkspacePage() {
   const handleSave = async () => {
     if (!inputText.trim()) { setError("没有内容可保存"); return; }
     try {
-      const res = await fetch("/api/works", {
+      const res = await csrfFetch("/api/works", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: docTitle, content: inputText, result: outputText, feature: "document" }),

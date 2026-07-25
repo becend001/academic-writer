@@ -8,7 +8,7 @@ function getIdentifier(request: Request): string {
   // 尝试从 cookie 中获取用户ID（简单方式）
   const cookies = request.headers.get("cookie") || "";
   const sessionMatch = cookies.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
-  if (sessionMatch) {
+  if (sessionMatch?.[1]) {
     return `user:${sessionMatch[1].substring(0, 32)}`;
   }
 

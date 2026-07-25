@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 interface ProfileData {
   id: string;
@@ -53,7 +54,7 @@ export default function AcademicProfile({ userId }: AcademicProfileProps) {
 
   const loadProfile = async () => {
     try {
-      const res = await fetch("/api/user/profile");
+      const res = await csrfFetch("/api/user/profile");
       const data = await res.json();
       if (data.success && data.profile) {
         setProfile(data.profile);
@@ -70,7 +71,7 @@ export default function AcademicProfile({ userId }: AcademicProfileProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/user/profile", {
+      const res = await csrfFetch("/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -93,7 +94,7 @@ export default function AcademicProfile({ userId }: AcademicProfileProps) {
 
   const handleExport = async () => {
     try {
-      const res = await fetch("/api/user/export");
+      const res = await csrfFetch("/api/user/export");
       const data = await res.json();
       if (data.success) {
         const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: "application/json" });
@@ -272,7 +273,7 @@ export default function AcademicProfile({ userId }: AcademicProfileProps) {
                     <div
                       className="h-full rounded-full"
                       style={{
-                        width: `${(count / sortedFeatures[0][1]) * 100}%`,
+                        width: `${(count / (sortedFeatures[0]?.[1] ?? 1)) * 100}%`,
                         background: index === 0 ? "var(--brand-600)" : index === 1 ? "#8B5CF6" : "#10B981",
                       }}
                     />

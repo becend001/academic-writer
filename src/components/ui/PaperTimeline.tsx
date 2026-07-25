@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 interface Paper {
   id: string;
@@ -48,7 +49,7 @@ export default function PaperTimeline() {
 
   const loadPapers = async () => {
     try {
-      const res = await fetch("/api/user/timeline");
+      const res = await csrfFetch("/api/user/timeline");
       const data = await res.json();
       if (data.success) {
         setPapers(data.papers || []);
@@ -68,7 +69,7 @@ export default function PaperTimeline() {
 
     setCreating(true);
     try {
-      const res = await fetch("/api/user/timeline", {
+      const res = await csrfFetch("/api/user/timeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +95,7 @@ export default function PaperTimeline() {
   const handleUpdateStatus = async (paperId: string, newStatus: string) => {
     setUpdatingStatus(paperId);
     try {
-      const res = await fetch(`/api/user/timeline/${paperId}`, {
+      const res = await csrfFetch(`/api/user/timeline/${paperId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,7 +122,7 @@ export default function PaperTimeline() {
     if (!confirm("确定要删除这篇论文吗？")) return;
 
     try {
-      const res = await fetch(`/api/user/timeline/${paperId}`, {
+      const res = await csrfFetch(`/api/user/timeline/${paperId}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -143,7 +144,7 @@ export default function PaperTimeline() {
     if (currentIndex === -1 || currentIndex === STATUS_FLOW.length - 1) return [];
     
     // 可以前进到下一个状态，或者如果当前是"修回"，可以到"录用"或"拒稿"
-    const next = [STATUS_FLOW[currentIndex + 1]];
+    const next = [STATUS_FLOW[currentIndex + 1]!];
     if (currentStatus === "修回") {
       next.push("拒稿");
     }

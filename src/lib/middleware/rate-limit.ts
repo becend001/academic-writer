@@ -3,6 +3,9 @@
 
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
+// 最大条目数，防止内存无限增长
+const MAX_ENTRIES = 10000;
+
 interface RateLimitConfig {
   maxRequests: number;     // 时间窗口内最大请求数
   windowMs: number;        // 时间窗口（毫秒）
@@ -26,6 +29,15 @@ export function checkRateLimit(
   const { maxRequests, windowMs } = { ...DEFAULT_CONFIG, ...config };
   const now = Date.now();
 
+  // 清理过期记录（惰性清理）
+  if (requestCounts.size > MAX_ENTRIES) {
+    for (const [key, record] of requestCounts.entries()) {
+      if (now > record.resetTime) {
+        requestCounts.delete(key);
+      }
+    }
+  }
+
   const record = requestCounts.get(identifier);
 
   if (!record || now > record.resetTime) {
@@ -46,7 +58,7 @@ export function checkRateLimit(
 }
 
 // 每5分钟清理过期记录
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, record] of requestCounts.entries()) {
     if (now > record.resetTime) {
@@ -54,3 +66,9 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+
+// Node.js 进程退出时清理定时器
+if (typeof process !== "undefined") {
+  process.on("SIGTERM", () => clearInterval(cleanupInterval));
+  process.on("SIGINT", () => clearInterval(cleanupInterval));
+}

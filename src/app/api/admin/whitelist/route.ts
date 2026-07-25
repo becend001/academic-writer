@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { createClientFromRequest } from "@/lib/supabase/api";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "xiangbow@126.com";
 
@@ -10,22 +7,8 @@ function isAdmin(email: string | undefined): boolean {
   return email?.toLowerCase().trim() === ADMIN_EMAIL;
 }
 
-// 从Authorization header中获取token，创建带鉴权的Supabase客户端
-function getSupabaseFromRequest(request: Request): SupabaseClient {
-  const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "");
-
-  if (token) {
-    return createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
-
 async function requireAdmin(request: Request) {
-  const supabase = getSupabaseFromRequest(request);
+  const supabase = createClientFromRequest(request);
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) return { supabase: null, user: null, error: "请先登录" };

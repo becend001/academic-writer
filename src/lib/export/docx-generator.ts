@@ -209,7 +209,9 @@ function createBudgetTable(budgetText: string): Table {
   lines.forEach((line, index) => {
     const match = line.match(/(.+?)[：:]\s*(\d+\.?\d*)\s*万元?[，,]?\s*(.*)/);
     if (match) {
-      const [, category, amount, description] = match;
+      const category = match[1] ?? "";
+      const amount = match[2] ?? "0";
+      const description = match[3] ?? "";
       totalAmount += parseFloat(amount);
       rows.push(
         new TableRow({

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 interface SubmissionAssistProps {
   todayUsage?: number;
@@ -76,7 +77,7 @@ export default function SubmissionAssist({
     setCoverLetterResult("");
 
     try {
-      const res = await fetch("/api/academic/cover-letter", {
+      const res = await csrfFetch("/api/academic/cover-letter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -118,7 +119,7 @@ export default function SubmissionAssist({
     setFormatCheckResult(null);
 
     try {
-      const res = await fetch("/api/academic/format-check", {
+      const res = await csrfFetch("/api/academic/format-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -157,7 +158,7 @@ export default function SubmissionAssist({
     setRebuttalResult("");
 
     try {
-      const res = await fetch("/api/academic/rebuttal", {
+      const res = await csrfFetch("/api/academic/rebuttal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 interface Journal {
   name: string;
@@ -87,7 +88,7 @@ export default function JournalRecommendation({
     setResults([]);
 
     try {
-      const res = await fetch("/api/academic/journal", {
+      const res = await csrfFetch("/api/academic/journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

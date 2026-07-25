@@ -48,10 +48,17 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
+    // 白名单校验：只允许更新安全字段，防止批量赋值
+    const allowedFields: Record<string, unknown> = {};
+    if (body.title !== undefined) allowedFields.title = String(body.title).slice(0, 200);
+    if (body.content !== undefined) allowedFields.content = String(body.content);
+    if (body.result !== undefined) allowedFields.result = String(body.result);
+    if (body.feature !== undefined) allowedFields.feature = String(body.feature).slice(0, 50);
+
     const { data, error } = await supabase
       .from("saved_works")
       .update({
-        ...body,
+        ...allowedFields,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { LiteratureSearch } from "@/components/ui/LiteratureSearch";
 import { Navbar } from "@/components/ui/Navbar";
 import { DAILY_USAGE_LIMIT } from "@/lib/config";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 export default function LiteraturePage() {
   const [user, setUser] = useState<any>(null);
@@ -26,7 +27,7 @@ export default function LiteraturePage() {
 
   const loadUsage = async () => {
     try {
-      const res = await fetch("/api/usage");
+      const res = await csrfFetch("/api/usage");
       const data = await res.json();
       if (data.whitelisted) { setWhitelisted(true); return; }
       if (data.today !== undefined) setTodayUsage(data.today);

@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/Toast";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import JournalRecommendation from "@/components/ui/JournalRecommendation";
 import SubmissionAssist from "@/components/ui/SubmissionAssist";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 interface Paper {
   id: string;
@@ -92,7 +93,7 @@ export function LiteratureSearch({
         offset: String(newPage * 10),
       });
 
-      const res = await fetch(`/api/academic/search?${params}`);
+      const res = await csrfFetch(`/api/academic/search?${params}`);
       const data = await res.json();
 
       if (data.error) {
@@ -123,7 +124,7 @@ export function LiteratureSearch({
     setSearchQueries([]);
 
     try {
-      const res = await fetch("/api/academic/recommend", {
+      const res = await csrfFetch("/api/academic/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,7 +140,7 @@ export function LiteratureSearch({
         setSearchQueries(data.searchQueries || []);
         onUsageConsumed?.();
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: `AI文献推荐`, content: recommendContent.substring(0, 200), result: JSON.stringify(data.papers || []).substring(0, 200), feature: "academic-recommend" }),
@@ -166,7 +167,7 @@ export function LiteratureSearch({
     setReviewContent("");
 
     try {
-      const res = await fetch("/api/academic/review", {
+      const res = await csrfFetch("/api/academic/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -190,7 +191,7 @@ export function LiteratureSearch({
         setShowReview(true);
         onUsageConsumed?.();
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: `文献综述`, content: selectedPapers.map(p => p.title).join(", ").substring(0, 200), result: (data.review || "").substring(0, 200), feature: "academic-review" }),
@@ -216,7 +217,7 @@ export function LiteratureSearch({
 
     setGeneratingCitation(true);
     try {
-      const res = await fetch("/api/academic/citation", {
+      const res = await csrfFetch("/api/academic/citation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

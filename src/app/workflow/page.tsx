@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { DAILY_USAGE_LIMIT } from "@/lib/config";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 const PROJECT_TYPES = [
   "国家自然科学基金面上项目",
@@ -125,7 +126,7 @@ export default function WorkflowPage() {
 
   const loadUsage = async () => {
     try {
-      const res = await fetch("/api/usage");
+      const res = await csrfFetch("/api/usage");
       const data = await res.json();
       if (data.whitelisted) { setWhitelisted(true); return; }
       if (data.today !== undefined) setTodayUsage(data.today);
@@ -196,7 +197,7 @@ export default function WorkflowPage() {
 
       await stepProgress(1);
 
-      const res = await fetch(endpoint, {
+      const res = await csrfFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -210,7 +211,7 @@ export default function WorkflowPage() {
         setTodayUsage((prev) => prev + 1);
         // 记录使用量
         try {
-          await fetch("/api/works", {
+          await csrfFetch("/api/works", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: `全流程 - ${selectedWorkflow}`, content: inputText.substring(0, 200), result: JSON.stringify(data).substring(0, 200), feature: selectedWorkflow || "workflow" }),

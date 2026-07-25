@@ -13,7 +13,7 @@ export function createClientFromRequest(request: Request) {
         getAll() {
           const cookieHeader = request.headers.get("cookie") || "";
           return cookieHeader.split(";").filter(Boolean).map((c) => {
-            const [name, ...val] = c.trim().split("=");
+            const [name = "", ...val] = c.trim().split("=");
             return { name, value: val.join("=") };
           });
         },

@@ -1,6 +1,7 @@
 // DeepSeek API 调用模块
 
 import { AI_TIMEOUT_MS } from "@/lib/config";
+import { sanitizeForPrompt } from "@/lib/utils/sanitize";
 
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 
@@ -11,6 +12,7 @@ interface ChatMessage {
 
 /**
  * 调用DeepSeek API（带超时）
+ * 自动对所有 user 消息进行输入清洗，防止 prompt 注入
  */
 export async function callDeepSeek(
   messages: ChatMessage[],
@@ -22,6 +24,13 @@ export async function callDeepSeek(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
+  // 清洗所有 user 消息，防止 prompt 注入
+  const sanitizedMessages = messages.map((msg) =>
+    msg.role === "user"
+      ? { ...msg, content: sanitizeForPrompt(msg.content) }
+      : msg
+  );
+
   try {
     const response = await fetch(DEEPSEEK_API_URL, {
       method: "POST",
@@ -31,7 +40,7 @@ export async function callDeepSeek(
       },
       body: JSON.stringify({
         model: "deepseek-chat",
-        messages,
+        messages: sanitizedMessages,
         temperature: options?.temperature ?? 0.7,
         max_tokens: options?.maxTokens ?? 2000,
       }),

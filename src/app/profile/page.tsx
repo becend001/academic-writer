@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import AcademicProfile from "@/components/ui/AcademicProfile";
 import PaperTimeline from "@/components/ui/PaperTimeline";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -39,7 +40,7 @@ export default function ProfilePage() {
 
   const checkAdmin = async () => {
     try {
-      const res = await fetch("/api/admin/check");
+      const res = await csrfFetch("/api/admin/check");
       const data = await res.json();
       setIsAdmin(data.isAdmin || false);
     } catch {}
@@ -47,7 +48,7 @@ export default function ProfilePage() {
 
   const loadStats = async () => {
     try {
-      const res = await fetch("/api/usage");
+      const res = await csrfFetch("/api/usage");
       const data = await res.json();
       setStats(data || { today: 0, total: 0 });
     } catch {}
@@ -55,7 +56,7 @@ export default function ProfilePage() {
 
   const loadDocuments = async () => {
     try {
-      const res = await fetch("/api/works?limit=10");
+      const res = await csrfFetch("/api/works?limit=10");
       const data = await res.json();
       setDocuments(data.works || []);
     } catch {}
@@ -96,11 +97,7 @@ export default function ProfilePage() {
 
   const loadWhitelist = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || "";
-      const res = await fetch("/api/admin/whitelist", {
-        headers: { "Authorization": `Bearer ${token}` },
-      });
+      const res = await csrfFetch("/api/admin/whitelist");
       const data = await res.json();
       setWhitelistList(data.list || []);
     } catch {}
@@ -111,14 +108,9 @@ export default function ProfilePage() {
     setWhitelistError("");
     setWhitelistLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || "";
-      const res = await fetch("/api/admin/whitelist", {
+      const res = await csrfFetch("/api/admin/whitelist", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: whitelistEmail.trim() }),
       });
       const data = await res.json();
@@ -136,11 +128,8 @@ export default function ProfilePage() {
 
   const handleRemoveWhitelist = async (id: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || "";
-      await fetch(`/api/admin/whitelist?id=${id}`, {
+      await csrfFetch(`/api/admin/whitelist?id=${id}`, {
         method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` },
       });
       loadWhitelist();
     } catch {}

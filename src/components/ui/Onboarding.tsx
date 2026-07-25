@@ -45,7 +45,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   if (!isVisible) return null;
 
-  const step = steps[currentStep];
+  const step = steps[currentStep]!;
   const isLastStep = currentStep === steps.length - 1;
 
   const handleNext = () => {
