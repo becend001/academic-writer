@@ -39,23 +39,23 @@ function isProtectedPath(pathname: string): boolean {
 }
 
 /**
- * 双提交 Cookie 模式 CSRF 防护：
- * 1. 每个响应种一个 csrf_token cookie（httpOnly=false，JS 可读）
- * 2. 客户端发状态变更请求时，从 cookie 读 token 放到 X-CSRF-Token header
- * 3. middleware 校验 header === cookie
+ * 给 response 附加 CSRF cookie
  */
-function getCsrfToken(request: NextRequest): string {
+function attachCsrfCookie(request: NextRequest, response: NextResponse): NextResponse {
   const existing = request.cookies.get(CSRF_COOKIE)?.value;
-  if (existing) return existing;
-  // Edge runtime 可用 crypto.randomUUID()
-  return crypto.randomUUID();
+  const csrfToken = existing || crypto.randomUUID();
+  response.cookies.set(CSRF_COOKIE, csrfToken, {
+    httpOnly: false,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60,
+  });
+  return response;
 }
 
 function validateCsrf(request: NextRequest): boolean {
-  // 只校验状态变更请求
   if (!CSRF_METHODS.has(request.method)) return true;
 
-  // 跳过不涉及用户状态的公开 API
   const pathname = request.nextUrl.pathname;
   if (pathname === "/api/admin/check") return true;
 
@@ -67,12 +67,12 @@ function validateCsrf(request: NextRequest): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  // CSRF 校验（在 Supabase 初始化之前，减少开销）
+  // CSRF 校验
   if (!validateCsrf(request)) {
-    return NextResponse.json(
+    return attachCsrfCookie(request, NextResponse.json(
       { error: "CSRF 验证失败" },
       { status: 403 }
-    );
+    ));
   }
 
   let supabaseResponse = NextResponse.next({
@@ -111,28 +111,20 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       if (request.nextUrl.pathname.startsWith("/api/")) {
-        return NextResponse.json(
+        return attachCsrfCookie(request, NextResponse.json(
           { error: "请先登录" },
           { status: 401 }
-        );
+        ));
       }
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/auth/login";
       loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
+      return attachCsrfCookie(request, NextResponse.redirect(loginUrl));
     }
   }
 
-  // 种 CSRF cookie（每个响应都刷新，确保 token 有效）
-  const csrfToken = getCsrfToken(request);
-  supabaseResponse.cookies.set(CSRF_COOKIE, csrfToken, {
-    httpOnly: false,  // 前端 JS 需要读取
-    sameSite: "lax",  // 跨站 GET 不发送，POST 时发送
-    path: "/",
-    maxAge: 60 * 60,  // 1 小时过期
-  });
-
-  return supabaseResponse;
+  // 种 CSRF cookie
+  return attachCsrfCookie(request, supabaseResponse);
 }
 
 export const config = {
