@@ -1,26 +1,39 @@
-import { createServerClient } from "@supabase/ssr";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * 从 Request 的 cookie 中创建服务端 Supabase client
- * 用于 API Route 中的身份验证和数据操作
- */
-export function createClientFromRequest(request: Request) {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          const cookieHeader = request.headers.get("cookie") || "";
-          return cookieHeader.split(";").filter(Boolean).map((c) => {
-            const [name = "", ...val] = c.trim().split("=");
-            return { name, value: val.join("=") };
-          });
-        },
-        setAll() {
-          // API Route 中不需要设置 cookie
-        },
-      },
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export function createClientFromRequest(request: Request): SupabaseClient {
+  // 1. 优先从 Authorization header 获取 token（前端传入）
+  const authHeader = request.headers.get("authorization") || "";
+  const bearerToken = authHeader.replace("Bearer ", "").trim();
+
+  // 2. 兼容从 cookie 获取
+  let cookieToken = "";
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const trimmed = cookie.trim();
+    const eqIndex = trimmed.indexOf("=");
+    if (eqIndex === -1) continue;
+    const key = trimmed.substring(0, eqIndex);
+    const value = trimmed.substring(eqIndex + 1);
+    if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+      try {
+        const decoded = JSON.parse(atob(value));
+        cookieToken = decoded?.access_token || "";
+      } catch {}
+      break;
     }
-  );
+  }
+
+  const token = bearerToken || cookieToken;
+
+  if (token) {
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey);
 }

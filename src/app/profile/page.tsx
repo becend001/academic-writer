@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import AcademicProfile from "@/components/ui/AcademicProfile";
 import PaperTimeline from "@/components/ui/PaperTimeline";
-import { csrfFetch } from "@/lib/utils/csrf-fetch";
+import { authFetch } from "@/lib/utils/auth-fetch";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -47,7 +47,7 @@ export default function ProfilePage() {
 
   const checkAdmin = async () => {
     try {
-      const res = await csrfFetch("/api/admin/check");
+      const res = await authFetch("/api/admin/check");
       const data = await res.json();
       setIsAdmin(data.isAdmin || false);
     } catch {}
@@ -55,7 +55,7 @@ export default function ProfilePage() {
 
   const loadStats = async () => {
     try {
-      const res = await csrfFetch("/api/usage");
+      const res = await authFetch("/api/usage");
       const data = await res.json();
       setStats(data || { today: 0, total: 0 });
     } catch {}
@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
   const loadDocuments = async () => {
     try {
-      const res = await csrfFetch("/api/works?limit=10");
+      const res = await authFetch("/api/works?limit=10");
       const data = await res.json();
       setDocuments(data.works || []);
     } catch {}
@@ -104,7 +104,7 @@ export default function ProfilePage() {
 
   const loadWhitelist = async () => {
     try {
-      const res = await csrfFetch("/api/admin/whitelist");
+      const res = await authFetch("/api/admin/whitelist");
       const data = await res.json();
       setWhitelistList(data.list || []);
     } catch {}
@@ -115,7 +115,7 @@ export default function ProfilePage() {
     setWhitelistError("");
     setWhitelistLoading(true);
     try {
-      const res = await csrfFetch("/api/admin/whitelist", {
+      const res = await authFetch("/api/admin/whitelist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: whitelistEmail.trim() }),
@@ -135,7 +135,7 @@ export default function ProfilePage() {
 
   const handleRemoveWhitelist = async (id: string) => {
     try {
-      await csrfFetch(`/api/admin/whitelist?id=${id}`, {
+      await authFetch(`/api/admin/whitelist?id=${id}`, {
         method: "DELETE",
       });
       loadWhitelist();
@@ -145,7 +145,7 @@ export default function ProfilePage() {
   const loadAdminUsers = async () => {
     setAdminUsersLoading(true);
     try {
-      const res = await csrfFetch("/api/admin/users");
+      const res = await authFetch("/api/admin/users");
       const data = await res.json();
       setAdminUsers(data.users || []);
     } catch {}
@@ -157,7 +157,7 @@ export default function ProfilePage() {
     setUserManageError("");
     setUserManageSuccess("");
     try {
-      const res = await csrfFetch("/api/admin/users", {
+      const res = await authFetch("/api/admin/users", {
         method: "PUT",
         body: JSON.stringify({
           userId: editingUser.user_id,
