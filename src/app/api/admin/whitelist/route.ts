@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClientFromRequest } from "@/lib/supabase/api";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "xiangbow@126.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 
 function isAdmin(email: string | undefined): boolean {
   return email?.toLowerCase().trim() === ADMIN_EMAIL;
