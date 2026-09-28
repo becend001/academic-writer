@@ -23,6 +23,13 @@ export default function ProfilePage() {
   const [whitelistError, setWhitelistError] = useState("");
   const [whitelistLoading, setWhitelistLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [adminUsersLoading, setAdminUsersLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editLevel, setEditLevel] = useState("free");
+  const [editExpires, setEditExpires] = useState("");
+  const [userManageError, setUserManageError] = useState("");
+  const [userManageSuccess, setUserManageSuccess] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -133,6 +140,44 @@ export default function ProfilePage() {
       });
       loadWhitelist();
     } catch {}
+  };
+
+  const loadAdminUsers = async () => {
+    setAdminUsersLoading(true);
+    try {
+      const res = await csrfFetch("/api/admin/users");
+      const data = await res.json();
+      setAdminUsers(data.users || []);
+    } catch {}
+    setAdminUsersLoading(false);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+    setUserManageError("");
+    setUserManageSuccess("");
+    try {
+      const res = await csrfFetch("/api/admin/users", {
+        method: "PUT",
+        body: JSON.stringify({
+          userId: editingUser.user_id,
+          membershipLevel: editLevel,
+          isPaid: editLevel !== "free",
+          expiresAt: editExpires ? new Date(editExpires).toISOString() : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setUserManageError(data.error);
+      } else {
+        setUserManageSuccess("更新成功！");
+        setEditingUser(null);
+        loadAdminUsers();
+        setTimeout(() => setUserManageSuccess(""), 2000);
+      }
+    } catch {
+      setUserManageError("更新失败");
+    }
   };
 
   if (!user) {
@@ -309,7 +354,148 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* 管理员：用户管理 */}
+        {isAdmin && (
+          <div className="card-premium p-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--gray-900)' }}>👥 用户管理</h3>
+              <button
+                onClick={loadAdminUsers}
+                className="btn btn-secondary px-4 py-2 text-sm"
+              >
+                {adminUsersLoading ? "加载中..." : "刷新列表"}
+              </button>
+            </div>
+
+            {userManageError && (
+              <div className="mb-3 p-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                {userManageError}
+              </div>
+            )}
+            {userManageSuccess && (
+              <div className="mb-3 p-2 rounded-lg text-sm" style={{ background: '#DCFCE7', color: '#16A34A' }}>
+                {userManageSuccess}
+              </div>
+            )}
+
+            {adminUsers.length === 0 ? (
+              <div className="text-center py-6" style={{ color: 'var(--gray-400)' }}>
+                {adminUsersLoading ? "加载中..." : "暂无数据，点击\"刷新列表\"加载"}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: 'var(--gray-50)' }}>
+                      <th className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--gray-600)' }}>邮箱</th>
+                      <th className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--gray-600)' }}>注册时间</th>
+                      <th className="px-3 py-2.5 text-center font-semibold" style={{ color: 'var(--gray-600)' }}>今日用量</th>
+                      <th className="px-3 py-2.5 text-center font-semibold" style={{ color: 'var(--gray-600)' }}>累计用量</th>
+                      <th className="px-3 py-2.5 text-center font-semibold" style={{ color: 'var(--gray-600)' }}>会员等级</th>
+                      <th className="px-3 py-2.5 text-center font-semibold" style={{ color: 'var(--gray-600)' }}>付费状态</th>
+                      <th className="px-3 py-2.5 text-center font-semibold" style={{ color: 'var(--gray-600)' }}>有效期</th>
+                      <th className="px-3 py-2.5 text-center font-semibold" style={{ color: 'var(--gray-600)' }}>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminUsers.map((u) => (
+                      <tr key={u.user_id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                        <td className="px-3 py-2.5" style={{ color: 'var(--gray-900)' }}>{u.email}</td>
+                        <td className="px-3 py-2.5" style={{ color: 'var(--gray-500)' }}>
+                          {u.created_at ? new Date(u.created_at).toLocaleDateString("zh-CN") : "-"}
+                        </td>
+                        <td className="px-3 py-2.5 text-center" style={{ color: 'var(--gray-700)' }}>{u.todayUsage || 0}</td>
+                        <td className="px-3 py-2.5 text-center" style={{ color: 'var(--gray-700)' }}>{u.totalUsage || 0}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-semibold"
+                            style={{
+                              background: u.membership_level === 'professional' ? '#EDE9FE' : u.membership_level === 'teacher' ? '#DBEAFE' : '#F3F4F6',
+                              color: u.membership_level === 'professional' ? '#7C3AED' : u.membership_level === 'teacher' ? '#1D4ED8' : '#6B7280',
+                            }}
+                          >
+                            {u.membership_level === 'professional' ? '专业版' : u.membership_level === 'teacher' ? '教师版' : '免费'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-semibold"
+                            style={{
+                              background: u.is_paid ? '#DCFCE7' : '#F3F4F6',
+                              color: u.is_paid ? '#16A34A' : '#6B7280',
+                            }}
+                          >
+                            {u.is_paid ? '已付费' : '未付费'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center" style={{ color: 'var(--gray-500)' }}>
+                          {u.expires_at ? new Date(u.expires_at).toLocaleDateString("zh-CN") : "-"}
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <button
+                            onClick={() => {
+                              setEditingUser(u);
+                              setEditLevel(u.membership_level || "free");
+                              setEditExpires(u.expires_at ? u.expires_at.substring(0, 10) : "");
+                            }}
+                            className="text-sm font-medium"
+                            style={{ color: 'var(--brand-600)' }}
+                          >
+                            编辑
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
+
+      {/* 会员编辑弹窗 */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setEditingUser(null)}>
+          <div className="w-full max-w-md mx-4 p-8 rounded-2xl" style={{ background: 'white', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--gray-900)' }}>编辑会员信息</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--gray-500)' }}>{editingUser.email}</p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-700)' }}>会员等级</label>
+              <select
+                value={editLevel}
+                onChange={(e) => setEditLevel(e.target.value)}
+                className="input py-3 w-full"
+              >
+                <option value="free">免费版</option>
+                <option value="teacher">教师版</option>
+                <option value="professional">专业版</option>
+              </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-700)' }}>有效期至</label>
+              <input
+                type="date"
+                value={editExpires}
+                onChange={(e) => setEditExpires(e.target.value)}
+                className="input py-3 w-full"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setEditingUser(null)} className="btn btn-secondary flex-1 py-3">
+                取消
+              </button>
+              <button onClick={handleUpdateUser} className="btn btn-primary flex-1 py-3">
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 密码修改弹窗 */}
       {showPasswordModal && (
