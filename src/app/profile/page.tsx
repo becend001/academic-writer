@@ -46,11 +46,16 @@ export default function ProfilePage() {
   }, []);
 
   const checkAdmin = async () => {
+    console.log("[checkAdmin] called");
     try {
       const res = await authFetch("/api/admin/check");
       const data = await res.json();
+      console.log("[checkAdmin] response:", data);
       setIsAdmin(data.isAdmin || false);
-    } catch {}
+      console.log("[checkAdmin] setIsAdmin called with:", data.isAdmin || false);
+    } catch (e) {
+      console.error("[checkAdmin] error:", e);
+    }
   };
 
   const loadStats = async () => {
