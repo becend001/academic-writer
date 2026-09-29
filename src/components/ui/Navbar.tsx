@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { FeedbackModal } from "@/components/ui/FeedbackModal";
 
 interface NavbarProps {
   activePage?: string;
@@ -8,6 +10,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ activePage, rightContent }: NavbarProps) {
+  const [showFeedback, setShowFeedback] = useState(false);
   const navItems = [
     { href: "/workspace", label: "写作工具", icon: "✏️", id: "workspace" },
     { href: "/workflow", label: "全流程", icon: "⚡", id: "workflow" },
@@ -56,10 +59,20 @@ export function Navbar({ activePage, rightContent }: NavbarProps) {
 
         {rightContent && (
           <div className="flex items-center gap-6">
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{ color: 'var(--gray-600)', background: 'var(--gray-100)' }}
+            >
+              <span>💬</span>
+              <span>反馈</span>
+            </button>
             {rightContent}
           </div>
         )}
       </div>
+
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
     </header>
   );
 }

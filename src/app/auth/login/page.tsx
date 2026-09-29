@@ -1,11 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { useToast } from "@/components/ui/Toast";
+import { supabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const { showToast } = useToast();
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resetEmail.trim()) return;
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) {
+        showToast(error.message, "error");
+      } else {
+        setResetSent(true);
+      }
+    } catch {
+      showToast("发送失败，请稍后重试", "error");
+    }
+    setResetLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--bg-base)' }}>
       {/* 左侧：品牌展示 */}
@@ -66,6 +91,17 @@ export default function LoginPage() {
 
           <LoginForm />
 
+          <div className="text-right mt-3">
+            <button
+              type="button"
+              onClick={() => { setShowReset(true); setResetSent(false); setResetEmail(""); }}
+              className="text-sm font-medium"
+              style={{ color: 'var(--brand-600)' }}
+            >
+              忘记密码？
+            </button>
+          </div>
+
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -85,6 +121,56 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* 忘记密码弹窗 */}
+      {showReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowReset(false)}>
+          <div className="w-full max-w-md mx-4 p-8 rounded-2xl" style={{ background: 'white', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--gray-900)' }}>重置密码</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--gray-500)' }}>
+              {resetSent ? "重置邮件已发送，请查收邮箱" : "输入您的注册邮箱，我们将发送重置密码链接"}
+            </p>
+
+            {resetSent ? (
+              <div className="p-4 rounded-xl text-sm" style={{ background: '#DCFCE7', color: '#16A34A' }}>
+                请检查您的邮箱（包括垃圾邮件箱），点击邮件中的链接重置密码。
+              </div>
+            ) : (
+              <>
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-700)' }}>邮箱</label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleResetPassword()}
+                    className="input py-3 w-full"
+                    placeholder="请输入注册邮箱"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowReset(false)} className="btn btn-secondary flex-1 py-3">
+                    取消
+                  </button>
+                  <button
+                    onClick={handleResetPassword}
+                    disabled={resetLoading || !resetEmail.trim()}
+                    className="btn btn-primary flex-1 py-3"
+                  >
+                    {resetLoading ? "发送中..." : "发送重置链接"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {resetSent && (
+              <button onClick={() => setShowReset(false)} className="btn btn-secondary w-full py-3 mt-4">
+                知道了
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
