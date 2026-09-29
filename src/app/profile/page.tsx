@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [whitelistList, setWhitelistList] = useState<any[]>([]);
   const [whitelistError, setWhitelistError] = useState("");
   const [whitelistLoading, setWhitelistLoading] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   // 用户管理
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -40,6 +41,7 @@ export default function ProfilePage() {
   const [userManageSuccess, setUserManageSuccess] = useState("");
   const [adminStats, setAdminStats] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [savingUser, setSavingUser] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -188,6 +190,7 @@ export default function ProfilePage() {
   };
 
   const handleRemoveWhitelist = async (id: string) => {
+    setRemovingId(id);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
@@ -197,12 +200,14 @@ export default function ProfilePage() {
       });
       loadWhitelist();
     } catch {}
+    setRemovingId(null);
   };
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
     setUserManageError("");
     setUserManageSuccess("");
+    setSavingUser(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
@@ -225,6 +230,7 @@ export default function ProfilePage() {
         setTimeout(() => setUserManageSuccess(""), 2000);
       }
     } catch { setUserManageError("更新失败"); }
+    setSavingUser(false);
   };
 
   if (!user) {
@@ -484,7 +490,17 @@ export default function ProfilePage() {
                             <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: '#DCFCE7', color: '#16A34A' }}>不限次数</span>
                             <span className="text-sm" style={{ color: 'var(--gray-900)' }}>{item.email}</span>
                           </div>
-                          <button onClick={() => handleRemoveWhitelist(item.id)} className="text-sm font-medium" style={{ color: 'var(--color-grant)' }}>移除</button>
+                          <button
+                            onClick={() => handleRemoveWhitelist(item.id)}
+                            disabled={removingId === item.id}
+                            className="text-sm font-medium transition-all"
+                            style={{
+                              color: removingId === item.id ? 'var(--gray-400)' : 'var(--color-grant)',
+                              cursor: removingId === item.id ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {removingId === item.id ? "移除中..." : "移除"}
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -608,7 +624,9 @@ export default function ProfilePage() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setEditingUser(null)} className="btn btn-secondary flex-1 py-3">取消</button>
-              <button onClick={handleUpdateUser} className="btn btn-primary flex-1 py-3">保存</button>
+              <button onClick={handleUpdateUser} disabled={savingUser} className="btn btn-primary flex-1 py-3">
+                {savingUser ? "保存中..." : "保存"}
+              </button>
             </div>
           </div>
         </div>
