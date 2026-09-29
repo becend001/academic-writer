@@ -37,6 +37,8 @@ export default function ProfilePage() {
   const [editExpires, setEditExpires] = useState("");
   const [userManageError, setUserManageError] = useState("");
   const [userManageSuccess, setUserManageSuccess] = useState("");
+  const [adminStats, setAdminStats] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -46,11 +48,24 @@ export default function ProfilePage() {
         loadDocuments();
         loadWhitelist();
         checkAdmin();
+        loadUserProfile();
       } else {
         window.location.href = "/auth/login";
       }
     });
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+      const res = await fetch("/api/user/profile", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.profile) setUserProfile(data.profile);
+    } catch {}
+  };
 
   const checkAdmin = async () => {
     try {
@@ -112,6 +127,18 @@ export default function ProfilePage() {
       setAdminUsers(data.users || []);
     } catch {}
     setAdminUsersLoading(false);
+  };
+
+  const loadAdminStats = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+      const res = await fetch("/api/admin/stats", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setAdminStats(data);
+    } catch {}
   };
 
   const handleLogout = async () => {
@@ -230,7 +257,20 @@ export default function ProfilePage() {
                 </div>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--gray-900)' }}>{user.email}</h2>
                 <div className="flex items-center justify-center gap-2 mt-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--color-grammar-light)', color: 'var(--color-grammar-dark)' }}>免费版</span>
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-semibold"
+                    style={{
+                      background: userProfile?.membership_level === 'professional' ? '#EDE9FE' : userProfile?.membership_level === 'teacher' ? '#DBEAFE' : 'var(--color-grammar-light)',
+                      color: userProfile?.membership_level === 'professional' ? '#7C3AED' : userProfile?.membership_level === 'teacher' ? '#1D4ED8' : 'var(--color-grammar-dark)',
+                    }}
+                  >
+                    {userProfile?.membership_level === 'professional' ? '专业版' : userProfile?.membership_level === 'teacher' ? '教师版' : '免费版'}
+                  </span>
+                  {userProfile?.is_paid && userProfile?.expires_at && (
+                    <span className="text-xs" style={{ color: 'var(--gray-400)' }}>
+                      有效期至 {new Date(userProfile.expires_at).toLocaleDateString("zh-CN")}
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm mt-2" style={{ color: 'var(--gray-400)' }}>
                   注册时间：{user.created_at ? new Date(user.created_at).toLocaleDateString("zh-CN") : "-"}
@@ -263,7 +303,7 @@ export default function ProfilePage() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => { setActiveTab(tab.id); if (tab.id === "admin" && isAdmin) { loadAdminStats(); } }}
                   className="flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all"
                   style={{
                     background: activeTab === tab.id ? 'var(--brand-50)' : 'transparent',
@@ -298,10 +338,16 @@ export default function ProfilePage() {
                   <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--gray-900)' }}>当前套餐</h3>
                   <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--gray-50)' }}>
                     <div>
-                      <div className="text-lg font-bold" style={{ color: 'var(--gray-900)' }}>免费版</div>
-                      <div className="text-sm" style={{ color: 'var(--gray-500)' }}>每天3次使用</div>
+                      <div className="text-lg font-bold" style={{ color: 'var(--gray-900)' }}>
+                        {userProfile?.membership_level === 'professional' ? '专业版' : userProfile?.membership_level === 'teacher' ? '教师版' : '免费版'}
+                      </div>
+                      <div className="text-sm" style={{ color: 'var(--gray-500)' }}>
+                        {userProfile?.is_paid
+                          ? `有效期至 ${userProfile?.expires_at ? new Date(userProfile.expires_at).toLocaleDateString("zh-CN") : "长期"}`
+                          : "每天3次使用"}
+                      </div>
                     </div>
-                    <Link href="/#pricing" className="btn btn-primary text-sm px-4 py-2">升级套餐</Link>
+                    {!userProfile?.is_paid && <Link href="/#pricing" className="btn btn-primary text-sm px-4 py-2">升级套餐</Link>}
                   </div>
                 </div>
 
@@ -358,6 +404,54 @@ export default function ProfilePage() {
             {/* Tab 3: 管理后台（仅管理员） */}
             {activeTab === "admin" && isAdmin && (
               <div className="space-y-6">
+                {/* 数据仪表盘 */}
+                {adminStats && (
+                  <div className="card-premium p-6">
+                    <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--gray-900)' }}>📊 数据概览</h3>
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--gray-50)' }}>
+                        <div className="text-sm" style={{ color: 'var(--gray-500)' }}>总用户数</div>
+                        <div className="text-2xl font-bold" style={{ color: 'var(--gray-900)' }}>{adminStats.totalUsers}</div>
+                      </div>
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--gray-50)' }}>
+                        <div className="text-sm" style={{ color: 'var(--gray-500)' }}>今日活跃</div>
+                        <div className="text-2xl font-bold" style={{ color: 'var(--brand-600)' }}>{adminStats.todayActiveUsers}</div>
+                      </div>
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--gray-50)' }}>
+                        <div className="text-sm" style={{ color: 'var(--gray-500)' }}>今日AI调用</div>
+                        <div className="text-2xl font-bold" style={{ color: 'var(--brand-600)' }}>{adminStats.todayCallCount}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="p-4 rounded-xl" style={{ background: '#DCFCE7' }}>
+                        <div className="text-sm" style={{ color: '#16A34A' }}>付费用户</div>
+                        <div className="text-2xl font-bold" style={{ color: '#16A34A' }}>{adminStats.paidUsers}</div>
+                      </div>
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--gray-50)' }}>
+                        <div className="text-sm" style={{ color: 'var(--gray-500)' }}>免费用户</div>
+                        <div className="text-2xl font-bold" style={{ color: 'var(--gray-700)' }}>{adminStats.freeUsers}</div>
+                      </div>
+                    </div>
+
+                    {adminStats.recentUsers?.length > 0 && (
+                      <div>
+                        <div className="text-sm font-semibold mb-2" style={{ color: 'var(--gray-600)' }}>最近注册</div>
+                        <div className="space-y-2">
+                          {adminStats.recentUsers.map((u: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg" style={{ background: 'var(--gray-50)' }}>
+                              <span className="text-sm" style={{ color: 'var(--gray-900)' }}>{u.email}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs" style={{ color: 'var(--gray-400)' }}>{new Date(u.created_at).toLocaleDateString("zh-CN")}</span>
+                                {u.is_paid && <span className="px-2 py-0.5 rounded text-xs" style={{ background: '#DCFCE7', color: '#16A34A' }}>付费</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* 白名单管理 */}
                 <div className="card-premium p-6">
                   <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--gray-900)' }}>🔑 白名单管理</h3>
