@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { useToast } from "@/components/ui/Toast";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 
 type TabType = "stats" | "settings" | "admin";
 
@@ -59,7 +60,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/user/profile", {
+      const res = await csrfFetch("/api/user/profile", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -71,7 +72,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/admin/check", {
+      const res = await csrfFetch("/api/admin/check", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -83,7 +84,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/usage", {
+      const res = await csrfFetch("/api/usage", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -95,7 +96,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/works?limit=5", {
+      const res = await csrfFetch("/api/works?limit=5", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -107,7 +108,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/admin/whitelist", {
+      const res = await csrfFetch("/api/admin/whitelist", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -120,7 +121,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/admin/users", {
+      const res = await csrfFetch("/api/admin/users", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -133,7 +134,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/admin/stats", {
+      const res = await csrfFetch("/api/admin/stats", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
@@ -174,7 +175,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/admin/whitelist", {
+      const res = await csrfFetch("/api/admin/whitelist", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ email: whitelistEmail.trim() }),
@@ -190,7 +191,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      await fetch(`/api/admin/whitelist?id=${id}`, {
+      await csrfFetch(`/api/admin/whitelist?id=${id}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` },
       });
@@ -205,7 +206,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await fetch("/api/admin/users", {
+      const res = await csrfFetch("/api/admin/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
