@@ -136,7 +136,7 @@ export default function WorkflowPage() {
   const checkUsage = () => {
     if (whitelisted) return true;
     if (todayUsage >= usageLimit) {
-      setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
+      setError(`今日免费次数已用完（${usageLimit}次），请升级专业版`);
       return false;
     }
     return true;

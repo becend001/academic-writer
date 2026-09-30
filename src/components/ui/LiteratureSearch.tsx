@@ -114,7 +114,7 @@ export function LiteratureSearch({
   const handleRecommend = async () => {
     if (!recommendContent.trim()) return;
     if (!whitelisted && todayUsage >= usageLimit) {
-      setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
+      setError(`今日免费次数已用完（${usageLimit}次），请升级专业版`);
       return;
     }
 
@@ -158,7 +158,7 @@ export function LiteratureSearch({
   const handleGenerateReview = async () => {
     if (selectedPapers.length === 0) return;
     if (!whitelisted && todayUsage >= usageLimit) {
-      setError(`今日免费次数已用完（${usageLimit}次），请升级Pro版`);
+      setError(`今日免费次数已用完（${usageLimit}次），请升级专业版`);
       return;
     }
 

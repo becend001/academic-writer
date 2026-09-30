@@ -2,6 +2,11 @@
 
 :root {
   /* ===== 品牌色 ===== */
+  --brand-50: #EFF6FF;
+  --brand-100: #DBEAFE;
+  --brand-200: #BFDBFE;
+  --brand-300: #93C5FD;
+  --brand-400: #60A5FA;
   --brand-500: #2563EB;
   --brand-600: #1D4ED8;
   --brand-700: #1E40AF;
@@ -31,6 +36,28 @@
   /* ===== 边框色 ===== */
   --border: #E2E8F0;
   --border-light: #F1F5F9;
+  --border-subtle: #E5E7EB;
+  --border-default: #D1D5DB;
+
+  /* ===== 功能色 ===== */
+  --color-polish: #F59E0B;
+  --color-polish-light: #FEF3C7;
+  --color-polish-dark: #B45309;
+  --color-translate: #3B82F6;
+  --color-translate-light: #DBEAFE;
+  --color-translate-dark: #1D4ED8;
+  --color-abstract: #8B5CF6;
+  --color-abstract-light: #EDE9FE;
+  --color-abstract-dark: #6D28D9;
+  --color-grant: #EF4444;
+  --color-grant-light: #FEE2E2;
+  --color-grant-dark: #DC2626;
+  --color-grammar: #10B981;
+  --color-grammar-light: #D1FAE5;
+  --color-grammar-dark: #059669;
+  --color-literature: #06B6D4;
+  --color-literature-light: #CFFAFE;
+  --color-literature-dark: #0891B2;
 }
 
 /* ===== 全局基础样式 ===== */

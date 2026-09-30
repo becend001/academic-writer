@@ -68,7 +68,7 @@ export default function GrantPage() {
   const checkUsage = () => {
     if (whitelisted) return true;
     if (todayUsage >= usageLimit) {
-      showToast(`今日免费次数已用完（${usageLimit}次），请升级Pro版`, "error");
+      showToast(`今日免费次数已用完（${usageLimit}次），请升级专业版`, "error");
       return false;
     }
     return true;
