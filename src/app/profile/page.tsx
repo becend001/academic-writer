@@ -62,7 +62,7 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || "";
-      const res = await csrfFetch("/api/user/profile", {
+      const res = await csrfFetch("/api/user/membership", {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();

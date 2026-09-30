@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { csrfFetch } from "@/lib/utils/csrf-fetch";
 import { useToast } from "@/components/ui/Toast";
 
 interface FeedbackModalProps {
@@ -20,21 +20,18 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
     if (!content.trim()) return;
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || "";
-      const res = await fetch("/api/feedback", {
+      const res = await csrfFetch("/api/feedback", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({ type, content: content.trim(), contact: contact.trim() }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
         setSubmitted(true);
         showToast("反馈提交成功，感谢您的建议！");
       } else {
-        const data = await res.json();
         showToast(data.error || "提交失败", "error");
       }
     } catch {

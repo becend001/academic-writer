@@ -19,20 +19,17 @@ export async function POST(request: Request) {
     let userId = null;
     let userEmail = "";
 
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
+    });
+
     if (token) {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         userId = user.id;
         userEmail = user.email || "";
       }
     }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
-    });
 
     // 存储反馈到 user_feedback 表
     const { error } = await supabase
@@ -47,8 +44,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("Feedback insert error:", error);
-      // 如果表不存在，返回成功（不阻塞用户）
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ error: "提交失败，请稍后重试" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

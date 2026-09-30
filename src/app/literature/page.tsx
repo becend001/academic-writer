@@ -12,6 +12,7 @@ export default function LiteraturePage() {
   const [user, setUser] = useState<any>(null);
   const [todayUsage, setTodayUsage] = useState(0);
   const [whitelisted, setWhitelisted] = useState(false);
+  const [selectedPapers, setSelectedPapers] = useState<any[]>([]);
   const usageLimit = DAILY_USAGE_LIMIT;
 
   useEffect(() => {
@@ -38,6 +39,16 @@ export default function LiteraturePage() {
     setTodayUsage((prev) => prev + 1);
   };
 
+  const handleSelectPaper = (paper: any) => {
+    setSelectedPapers((prev) => {
+      const exists = prev.find((p) => p.id === paper.id);
+      if (exists) {
+        return prev.filter((p) => p.id !== paper.id);
+      }
+      return [...prev, paper];
+    });
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
@@ -61,6 +72,8 @@ export default function LiteraturePage() {
       {/* 内容区 */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <LiteratureSearch
+          onSelect={handleSelectPaper}
+          selectedPapers={selectedPapers}
           todayUsage={todayUsage}
           usageLimit={usageLimit}
           whitelisted={whitelisted}
