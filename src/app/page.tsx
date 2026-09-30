@@ -431,6 +431,7 @@ function Pricing() {
       name: "教师版",
       price: "¥299",
       period: "/月",
+      promo: true,
       features: ["无限使用所有功能", "润色/翻译/摘要", "文献搜索", "优先客服"], 
       btn: "btn-primary", 
       popular: true,
@@ -479,7 +480,12 @@ function Pricing() {
                 border: '1px solid var(--border)'
               }}
             >
-              {/* 最受欢迎标签已移除 */}
+              {/* 限时优惠标签 */}
+              {p.promo && (
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                  🔥 首月 ¥99
+                </div>
+              )}
               <div className="p-8">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ background: p.iconBg, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   <span className="text-3xl">{p.icon}</span>
@@ -489,6 +495,11 @@ function Pricing() {
                   <span className="text-5xl font-bold" style={{ color: p.textColor }}>{p.price}</span>
                   <span className="text-lg font-medium" style={{ color: 'var(--gray-500)' }}>{p.period}</span>
                 </div>
+                {p.promo && (
+                  <div className="mb-6 px-3 py-1.5 rounded-lg text-sm font-semibold inline-block" style={{ background: '#FEF3C7', color: '#B45309' }}>
+                    限时优惠：首月仅 ¥99（省200元）
+                  </div>
+                )}
                 <div className="space-y-4 mb-10">
                   {p.features.map((f, j) => (
                     <div key={j} className="flex items-center gap-3">
@@ -499,7 +510,12 @@ function Pricing() {
                     </div>
                   ))}
                 </div>
-                <Link href="/auth/register" className={`btn ${p.btn} w-full py-4 text-base`}>开始使用</Link>
+                <Link 
+                  href={i === 0 ? "/auth/register" : "/subscribe"} 
+                  className={`btn ${p.btn} w-full py-4 text-base`}
+                >
+                  {i === 0 ? "免费开始" : "立即开通"}
+                </Link>
               </div>
             </div>
           ))}
@@ -520,13 +536,6 @@ function CTA() {
           <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)', transform: 'translate(-30%, 30%)' }}></div>
           
           <div className="relative z-10">
-            {/* 限时优惠标签 */}
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full text-base font-bold mb-6" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
-              <span>🔥</span>
-              <span>限时优惠：教师版首月仅 ¥99</span>
-              <span className="px-2 py-0.5 rounded text-xs" style={{ background: 'rgba(255,255,255,0.3)' }}>省200元</span>
-            </div>
-
             <h2 className="mb-4" style={{ fontSize: '36px', fontWeight: '700', color: 'white' }}>
               准备好提升学术写作效率了吗？
             </h2>
